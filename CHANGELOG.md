@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-10-02 · 校验体系补全（WIKI.md v3.2）
+
+- `wiki-lint.py` 由 8 项扩至 **12 项**：新增 type 完整性（每页必填 type 且值合法）、子类型一致性（entity/concept 必填子类型且与父目录一致，source 必填 source_type）、转述级警示（C/D 级页正文必须含 ⚠️）、等级引用可溯（`X 级（出处：…）`字母合法 + 出处存在）
+- **修复跨平台 bug**：Windows 下 `os.path.relpath` 产生反斜杠键，与 `[[]]` 正斜杠链接永不匹配，导致断链/孤儿页全部误报（回归测试暴露，历史版本在 Windows 上从未真正全绿）
+- 修复 Windows GBK 控制台打印 🟢🟡🔴 崩溃（stdout / stderr 强制 UTF-8）
+- `WIKI.md` 新增 Page Types 权威定义（type 允许值 + 各类型必填字段），Entity/Concept 增加 dir_mapping
+- 验证：历史 13 页（0d3bd5c）回归零误报；6 个违规 fixture 全部精准触发
+
 ## 2026-10-02 · 模板化重构
 
 - 清空全部样本内容（5 份 `raw/` 快照 + 13 个 wiki 页），保留方法论框架作为可复用空模板

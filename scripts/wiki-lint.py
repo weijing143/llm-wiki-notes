@@ -4,7 +4,7 @@
 用法:
     python3 scripts/wiki-lint.py [root]      # root 默认为仓库根目录
 
-检查八类：
+检查十二类：
   1. 断链          [[路径]] 指向不存在的页
   2. 孤儿页        无任何入链（index.md 的链接也算入链）
   3. 缺 frontmatter
@@ -12,7 +12,11 @@
   5. index.md 重复的 H2 区块 / 重复条目
   6. log.md 漏记   （最新内容页日期 > 最新日志日期）
   7. 定级完整性    （source/collection 必填 evidence_level；含 🟢🟡🔴 的表须自带图例）
-  8. 结构计数      （文件数 / 磁盘占用 / 各分类页数）
+  8. type 完整性   （每页必填 type，且值在允许集合内）
+  9. 子类型一致性  （entity 必填 entity_type、concept 必填 concept_type 且与父目录一致；source 必填 source_type）
+  10. 转述级警示   （evidence_level 为 C/D 的页正文必须含 ⚠️）
+  11. 等级引用可溯 （"X 级（出处：…）"的等级字母合法、出处页存在）
+  12. 结构计数     （文件数 / 磁盘占用 / 各分类页数）
 纯标准库、只读、不改任何文件。退出码恒为 0，除非库根不存在。
 """
 import os
@@ -41,6 +45,18 @@ IDX = os.path.join(WIKI, "index.md")
 LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 EMOJI_RE = re.compile("🟢|🟡|🔴")
 DATE_RE = re.compile(r"\[?(\d{4}-\d{2}-\d{2})")
+GRADE_REF_RE = re.compile(r"([A-Z])\s*级（出处：([^）]+)）")
+
+PAGE_TYPES = {"index", "overview", "collection", "entity", "concept", "source",
+              "analysis", "comparison", "question"}
+ENTITY_TYPES = {"person", "organization", "product", "technology", "event"}
+CONCEPT_TYPES = {"theory", "method", "framework", "metric", "principle"}
+ENTITY_DIR_TYPE = {"people": "person", "organizations": "organization",
+                   "products": "product", "technologies": "technology",
+                   "events": "event"}
+CONCEPT_DIR_TYPE = {"theories": "theory", "methods": "method",
+                    "frameworks": "framework", "metrics": "metric",
+                    "principles": "principle"}
 
 
 def collect_pages():
@@ -49,7 +65,8 @@ def collect_pages():
         for f in files:
             if f.endswith(".md"):
                 rel = os.path.relpath(os.path.join(dirpath, f), WIKI)
-                pages[rel[:-3]] = os.path.join(dirpath, f)
+                rel = rel.replace(os.sep, "/")[:-3]   # 统一正斜杠，键与 [[链接]] 一致
+                pages[rel] = os.path.join(dirpath, f)
     return pages
 
 
@@ -63,6 +80,11 @@ def frontmatter(path):
         return None
     end = txt.find("\n---", 3)
     return txt[3:end] if end != -1 else None
+
+
+def fm_value(fm, name):
+    m = re.search(r"^%s:\s*(.+)$" % name, fm or "", re.M)
+    return m.group(1).strip() if m else None
 
 
 def normalize(target):
@@ -172,7 +194,74 @@ def main():
     print("  含 🟢🟡🔴 但缺图例的表: "
           + ("无" if not legend_missing else "\n".join("    " + x for x in legend_missing)))
 
-    # 8. 结构计数（排除 .git，避免计数被版本库对象淹没）
+    # 8. type 完整性（每页必填 + 允许值）
+    section("type 完整性")
+    type_missing, type_bad = [], []
+    types = {}
+    for rel, path in sorted(pages.items()):
+        ty = fm_value(frontmatter(path), "type")
+        if not ty:
+            type_missing.append(rel)
+        elif ty not in PAGE_TYPES:
+            type_bad.append("%s (%s)" % (rel, ty))
+        else:
+            types[rel] = ty
+    print("  缺 type: " + ("无" if not type_missing else "\n".join("    " + x for x in type_missing)))
+    print("  type 值非法: " + ("无" if not type_bad else "\n".join("    " + x for x in type_bad)))
+
+    # 9. 子类型一致性（entity/concept 必填子类型且与父目录一致；source 必填 source_type）
+    section("子类型一致性")
+    subtype_bad = []
+    for rel, path in sorted(pages.items()):
+        fm = frontmatter(path) or ""
+        ty = types.get(rel)
+        parts = rel.split("/")
+        if ty == "entity":
+            et = fm_value(fm, "entity_type")
+            if not et:
+                subtype_bad.append("%s: 缺 entity_type" % rel)
+            else:
+                if et not in ENTITY_TYPES:
+                    subtype_bad.append("%s: entity_type=%s 非法" % (rel, et))
+                exp = ENTITY_DIR_TYPE.get(parts[1]) if parts[0] == "entities" and len(parts) >= 2 else None
+                if exp and et != exp:
+                    subtype_bad.append("%s: entity_type=%s 与目录 %s/ 不符（应为 %s）" % (rel, et, parts[1], exp))
+        elif ty == "concept":
+            ct = fm_value(fm, "concept_type")
+            if not ct:
+                subtype_bad.append("%s: 缺 concept_type" % rel)
+            else:
+                if ct not in CONCEPT_TYPES:
+                    subtype_bad.append("%s: concept_type=%s 非法" % (rel, ct))
+                exp = CONCEPT_DIR_TYPE.get(parts[1]) if parts[0] == "concepts" and len(parts) >= 2 else None
+                if exp and ct != exp:
+                    subtype_bad.append("%s: concept_type=%s 与目录 %s/ 不符（应为 %s）" % (rel, ct, parts[1], exp))
+        elif ty == "source" and not fm_value(fm, "source_type"):
+            subtype_bad.append("%s: 缺 source_type" % rel)
+    print("  无" if not subtype_bad else "\n".join("  " + x for x in subtype_bad))
+
+    # 10. 转述级警示（C/D 级页正文必须含 ⚠️）
+    section("转述级警示")
+    warn_missing = []
+    for rel, path in sorted(pages.items()):
+        fm = frontmatter(path) or ""
+        if re.search(r"^evidence_level:\s*[CD]\s*$", fm, re.M) and "⚠️" not in read(path):
+            warn_missing.append(rel)
+    print("  无" if not warn_missing else "\n".join("  " + x for x in warn_missing))
+
+    # 11. 等级引用可溯（"X 级（出处：…）"等级合法 + 出处页存在）
+    section("等级引用可溯")
+    ref_bad = []
+    for rel, path in sorted(pages.items()):
+        for letter, target in GRADE_REF_RE.findall(read(path)):
+            if letter not in "ABCD":
+                ref_bad.append("%s: 非法等级字母 %s 级" % (rel, letter))
+            t = normalize(target.strip().strip("[]"))
+            if t not in pages:
+                ref_bad.append("%s: 出处不存在 -> %s" % (rel, t))
+    print("  无" if not ref_bad else "\n".join("  " + x for x in ref_bad))
+
+    # 12. 结构计数（排除 .git，避免计数被版本库对象淹没）
     section("结构计数")
     files_all = []
     for d, s, fs in os.walk(ROOT):
