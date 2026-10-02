@@ -165,7 +165,7 @@ def main():
     print("  含 🟢🟡🔴 但缺图例的表: "
           + ("无" if not legend_missing else "\n".join("    " + x for x in legend_missing)))
 
-    # 8. 结构计数（排除 .git —— 2026-10-01 库入 git 后必须剪掉，否则计数被版本库对象淹没）
+    # 8. 结构计数（排除 .git，避免计数被版本库对象淹没）
     section("结构计数")
     files_all = []
     for d, s, fs in os.walk(ROOT):

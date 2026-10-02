@@ -1,6 +1,6 @@
 # 原始快照：OpenAI《An Alien Mind》异星心智（2026-09-06）
 
-> 来源：openai.com 官方原文 + anysearch 多源检索 + BBC 转引。
+> 来源：openai.com 官方原文 + 多源检索 + BBC 转引。
 > 抓取时间：2026-09-08。本文件为原始数据快照，正文内容的分析整理见 [[collections/openai-alien-mind-2026]]。
 
 ## 出处

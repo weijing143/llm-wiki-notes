@@ -1,9 +1,3 @@
-# Obsidian
-.obsidian/
-
-# qmd index
-.qmd-index/
-
 # OS files
 .DS_Store
 Thumbs.db

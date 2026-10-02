@@ -1,11 +1,11 @@
 ---
-title: 个人知识库 Wiki Index
+title: LLM Wiki Notes Index
 type: index
 created: 2026-07-23
 updated: 2026-10-02
 ---
 
-# 个人知识库 Wiki Index
+# LLM Wiki Notes Index
 
 全部 wiki 页面的目录（13 页）。入库触发方式与定级规则见库根 `WIKI.md`。
 

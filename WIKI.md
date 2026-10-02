@@ -1,9 +1,9 @@
 ---
-project: 个人知识库
-domain: personal
+project: llm-wiki-notes
+domain: ai-industry-notes
 created: 2026-07-23
 version: 3.0
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Wiki Configuration
@@ -12,7 +12,7 @@ updated: 2026-10-01
 
 ## Project Info
 
-- **Name**: 个人知识库 ｜ **Domain**: personal
+- **Name**: LLM Wiki Notes ｜ **Domain**: ai-industry-notes
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
 - **Created**: 2026-07-23 ｜ **配置版本**: 3.0
 
@@ -22,7 +22,7 @@ updated: 2026-10-01
 |---|---|---|
 | 源文档 | `raw/`（notes · articles · transcripts · papers · assets · data） | 不可变、只写不改；数字标抓取日期，作溯源头 |
 | 知识库 | `wiki/`（index · overview · collections · entities · concepts · sources） | 由人工 + agent 协作维护；交叉引用用 `[[页面路径]]` |
-| 配置 | `WIKI.md`（本文件） | 规则与约定（定级 / 入库 / lint）；操作留痕 `log.md` 只保留在本地私有库，不进公开版本 |
+| 配置 | `WIKI.md`（本文件） | 规则与约定（定级 / 入库 / lint）；操作日志不在本样本发布范围内 |
 
 **分类目录按需创建**：现有 `entities/people`、`entities/organizations`、`concepts/theories`、`concepts/methods`、`sources/articles`、`collections`；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时 `mkdir` 即可。
 
@@ -81,7 +81,7 @@ ingest:
     - raw/<分类>/<主题>-<日期>.md         # 原始快照；数字标抓取日期
     - wiki/collections/<主题>-<年>.md     # 或向现有页追加
     - wiki/index.md                      # 登记
-    - log.md                             # 追加（含分类决策理由）
+    - log.md                             # 操作留痕（不在本样本发布范围内）
     - git commit                          # 收尾提交
   page_decision: 同主题续条 → 追加现有页；同域不同主题 → 新建独立页
   collection_page_sections: [核心结论, 核查表（带图例）, 反方视角, 后续跟踪点, 归档记录]

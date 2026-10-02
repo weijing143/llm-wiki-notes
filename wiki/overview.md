@@ -1,16 +1,16 @@
 ---
-title: 个人知识库 Overview
+title: LLM Wiki Notes Overview
 type: overview
 created: 2026-07-23
 updated: 2026-10-02
 sources: []
 ---
 
-# 个人知识库 Overview
+# LLM Wiki Notes Overview
 
 ## Introduction
 
-本库沉淀**经核查的外部内容**，不收录日常对话与查询结果（入库规则见库根 `WIKI.md`）。建库于 2026-07-23；截至 **2026-10-01**：13 个 wiki 页（4 收藏专题 · 3 实体 · 3 概念 · 1 来源摘要 · index / overview）、5 份 `raw/` 快照。所有主张均带来源等级（A/B/C/D）与吻合度标记；本页为**首次合成**（此前长期为模板占位）。
+本样本沉淀**经核查的外部内容**，不收录日常对话与查询结果（入库规则见库根 `WIKI.md`）。建库于 2026-07-23；截至 **2026-10-01**：13 个 wiki 页（4 个专题 · 3 实体 · 3 概念 · 1 来源摘要 · index / overview）、5 份 `raw/` 快照。所有主张均带来源等级（A/B/C/D）与吻合度标记；本页为**首次合成**（此前长期为模板占位）。
 
 ## Key Themes（跨专题主题）
 
@@ -26,7 +26,7 @@ sources: []
 4. **自媒体内容的信息质量有可预测的分布**
    三张核查表的经验：**"事件 / 事实"类主张多与来源吻合**；**"金额规模、身份头衔、时间跨度"处最易出现口径放大或转述偏差**——如 AI 制药页 #9 把"四领域分摊的 10 亿"说成"一年全投生命科学"（口径放大）、#13 未定位到出处、#6 头衔细节偏差；教育页 #3 的"员工培训"属演绎。
 
-5. **成本转移是本库最一致的经济学观察**
+5. **成本转移是本样本最一致的经济学观察**
    写代码变免费 → 为代码负责变贵（[[concepts/theories/software-engineering-vs-coding]]）；药物研发周期被宣称从 10 年压到 1 年（[[collections/ai-pharma-2026]]）；当下真正先兑现的是算力与工具（"卖铲子的先收钱"）。
 
 ## Major Entities
@@ -42,7 +42,7 @@ sources: []
 
 ## Core Concepts
 
-- **证据定级体系**（本库自身方法论）：来源等级 A/B/C/D + 吻合度标记 + `—` 背景共识，两轴不得混写——规则见库根 `WIKI.md`
+- **证据定级体系**（本样本自身方法论）：来源等级 A/B/C/D + 吻合度标记 + `—` 背景共识，两轴不得混写——规则见库根 `WIKI.md`
 - **软件工程 ≠ 写代码**：成本从"写"转移到"判断 / 验证 / 担责"（[[concepts/theories/software-engineering-vs-coding]]）
 - **审查对象转移**：逐行读码 → 接口契约 / 权限 / 性能基线 / 供应链风险（[[concepts/methods/ai-code-review-shift]]）
 - **为模型而非人类设计的语言**：强类型 / 形式化验证优先（[[concepts/theories/programming-language-for-ai]]）

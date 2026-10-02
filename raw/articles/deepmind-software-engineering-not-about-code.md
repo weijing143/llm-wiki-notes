@@ -11,7 +11,7 @@ retrieved: 2026-07-23
 
 > "Software engineering is not about writing code."
 
-> 本文为公众号文章的整理，逐段要点仅存于本地私有库。公开版本保留出处、核心论点索引与原文链接。
+> 逐段要点不在本样本内，此处保留出处、核心论点索引与原文链接。
 > 原文：https://mp.weixin.qq.com/s/yr-CgacZiIMDtaaVc6qHow ｜ 演讲录像：https://www.youtube.com/watch?v=1P1hJ36rxM0
 
 ## 核心论点
