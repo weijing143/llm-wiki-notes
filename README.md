@@ -1,8 +1,10 @@
 # LLM Wiki Notes
 
-用 **LLM Wiki 模式**沉淀的 AI 行业知识笔记 —— 外部内容先原样存档，再经多源核查沉淀为结构化知识页。
+用 **LLM Wiki 模式**沉淀知识笔记的框架 —— 外部内容先原样存档，再经多源核查沉淀为结构化知识页。
 
 核心不是收藏链接，而是**把「自媒体主张」与「一手来源」逐条对齐**：每条主张都带来源等级和吻合度，口径被放大的地方显式标出来。
+
+当前为空模板：只含规则（`WIKI.md`）、目录骨架、自检脚本（`scripts/wiki-lint.py`）与留痕机制（`log.md`），尚未入库任何内容。
 
 ## 工作流
 
@@ -18,45 +20,25 @@
 | `🟢/🟡/🔴` | 吻合度 | 吻合 · 措辞口径偏差或演绎 · 口径放大 |
 | `—` | 补充 | 背景共识，只标注不计数 |
 
-## 为什么值得这么麻烦
-
-自媒体内容的信息质量**有可预测的分布**：事件 / 事实类主张多与来源吻合；`金额规模`、`身份头衔`、`时间跨度` 三处最容易出现口径放大。
-
-本样本的一系列核查里最典型的一条：视频称「OpenAI 基金会未来一年投 10 亿美元在生命科学」，直抓 openai.com 原文后确认是**四领域分摊、未提「一年」** → 判 🔴 口径放大，摘要按核查表重算结论。
-
-另一类价值在于**显式标注不确定**：本样本存在 C 级（转述、未核一手）与 D 级（未定位出处）条目，它们被标出来而不是被抹平。
-
 ## 目录
 
 ```
 README.md
 WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 规则
 LICENSE
-CHANGELOG.md                   # 内容变更史：入库、核查修正、规则演进
-log.md                         # 操作留痕：只保留格式与机制（条目内容不随样本发布）
+CHANGELOG.md                   # 内容变更史
+log.md                         # 操作留痕：只保留格式与机制
 scripts/wiki-lint.py           # 结构自检：断链 / 孤儿页 / 定级完整性 / 结构计数
 raw/                           # 源文档层（只写不改，作溯源头）
   articles/                     网页原文的出处卡片
   notes/                        视频 / API / 检索快照
 wiki/                          # 知识库层
   index.md                      全部页面目录
-  overview.md                   跨专题合成（主题 / 实体 / 概念 / 开放问题 / 知识缺口）
-  collections/                  专题页：核查表所在（4 篇）
-  entities/                     实体页：人 / 组织（3 篇）
-  concepts/                     概念页：理论 / 方法（3 篇）
+  collections/                  专题页：核查表所在
+  entities/                     实体页：人 / 组织
+  concepts/                     概念页：理论 / 方法
   sources/                      来源摘要页，承载 evidence_level
 ```
-
-## 专题
-
-| 页 | 内容 |
-|---|---|
-| [AI 制药行业全景 2026-08](wiki/collections/ai-pharma-2026.md) | 六玩家布局 + **13 条主张核查表** |
-| [AI 基因组设计 / 合成生物学 2026-08](wiki/collections/ai-genome-design-2026.md) | 首个 AI 设计噬菌体（Science 论文）+ 事件时间线 |
-| [AI 教育生态 2026-08](wiki/collections/ai-education-2026.md) | Claude Academy 课程体系 + 4D AI Fluency 框架 |
-| [OpenAI《An Alien Mind》异星心智 2026-09](wiki/collections/openai-alien-mind-2026.md) | RSI / CoT 监控可靠性 / 价值对齐 + 6 条分级核查 |
-
-方法论与概念页见 [`wiki/overview.md`](wiki/overview.md)。
 
 ## 自检
 
