@@ -2,7 +2,7 @@
 project: llm-wiki-notes
 domain: general
 created: 2026-07-23
-version: 3.2
+version: 3.3
 updated: 2026-10-02
 ---
 
@@ -14,7 +14,7 @@ updated: 2026-10-02
 
 - **Name**: LLM Wiki Notes ｜ **Domain**: general
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
-- **Created**: 2026-07-23 ｜ **配置版本**: 3.2
+- **Created**: 2026-07-23 ｜ **配置版本**: 3.3
 
 ## 三层结构
 
@@ -43,7 +43,7 @@ page_types:
     concept: [concept_type]                  # 概念页；concept_type ∈ 概念分类菜单，且与父目录一致
     source: [evidence_level, source_type]    # 来源页；evidence_level 为等级源头；source_type 自由文本
   notes:
-    - evidence_level 取值：A/B/C/D 或 N/A（N/A 仅限无外部来源的内部记录页）
+    - evidence_level 取值：A/B/C/D 或 N/A（N/A 仅限全部主张均无外部来源的内部记录页）
     - C / D 级页正文必须含 ⚠️ 显式警示（lint 第 10 项）
     - entity / concept 页引用等级须写作 `A 级（出处：collections/<专题>）`（lint 第 11 项校验字母合法 + 出处存在）
 ```
@@ -90,17 +90,20 @@ concepts:
 | `🟢/🟡/🔴` | **吻合度** | 🟢 与来源吻合 · 🟡 方向真实但措辞口径有偏差、或属演绎·转述 · 🔴 口径放大或与来源不符 |
 | `—` | 补充标记 | 背景共识：非被核查主张的背景陈述，只标注不计数 |
 
-**载体分工**：`source` 页 frontmatter 必填 `evidence_level`（等级源头）→ `entity` / `concept` 继承（引用时写成 `A 级（出处：collections/<专题>）`）→ `collection` 页填页级等级（无外部来源的内部记录页填 `N/A`）并在表内逐条标 → `overview` / `index` 不标。
+**载体分工**：`source` 页 frontmatter 必填 `evidence_level`（等级源头）→ `collection` 页填页级等级并在表内逐条标 → `entity` / `concept` 继承（引用时写成 `A 级（出处：collections/<专题>）`）→ `overview` / `index` 不标。
+
+**页级等级推导（木桶原则）**：`collection` 页只有唯一的页级 `evidence_level`，当表内逐条来源等级不一致时，**页级取最低的来源等级**（宁严勿宽；读者看到页级即得到整页可信度的下界保证）。全部主张均无外部来源时才允许填 N/A。
 
 **硬要求**：
 
 - 每张核查表**自带图例**（读者不必回查本文件）
+- 表内每条主张**逐条标注**吻合度 / 来源等级；漏标由 lint 第 12 项告警
 - 数字 / 日期可溯源到具体来源页；**转述级须在正文顶部显式警示**（⚠️）
 - 改判定**先核实再改标签**（直抓一手 URL 对原文），核不实按 C/D 标，不猜不折中
 - 摘要与核查表不一致时**以表为准**，并在原处留「勘误」注记，不静默替换
 - 跨页**同形态主张判定必须一致**
 - `source` 页等级空白会波及全部下游页 → 优先修
-- 自动校验：`scripts/wiki-lint.py` 第 7 / 10 / 11 项，运行 `python3 scripts/wiki-lint.py`
+- 自动校验：`scripts/wiki-lint.py` 第 7 / 10 / 11 / 12 项，运行 `python3 scripts/wiki-lint.py`
 
 ## 入库规则（Ingest）
 
@@ -127,9 +130,10 @@ ingest:
 lint:
   trigger: manual                 # 手动执行；脚本 scripts/wiki-lint.py（无自动调度）
   cadence: 按需 / 结构变动后        # 例：批量归档后、重建后
-  automated:                      # 共 12 项，见脚本 docstring
+  automated:                      # 共 13 项，见脚本 docstring
     [断链, 孤儿页, 缺 frontmatter, updated 与 mtime 漂移, index 重复区块,
-     log.md 漏记, 定级完整性, type 完整性, 子类型一致性, 转述级警示, 等级引用可溯, 结构计数]
+     log.md 漏记, 定级完整性, type 完整性, 子类型一致性, 转述级警示, 等级引用可溯,
+     逐条覆盖, 结构计数]
   manual: [跨页矛盾, 过时声明, 缺失页面, 数据缺口]
   on_fix: 修完复跑脚本确认全绿
 ```
@@ -143,4 +147,4 @@ output:
 ```
 
 ---
-*配置版本 3.2 ｜ 空模板版*
+*配置版本 3.3 ｜ 空模板版*

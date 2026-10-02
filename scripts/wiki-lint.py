@@ -4,7 +4,7 @@
 用法:
     python3 scripts/wiki-lint.py [root]      # root 默认为仓库根目录
 
-检查十二类：
+检查十三类：
   1. 断链          [[路径]] 指向不存在的页
   2. 孤儿页        无任何入链（index.md 的链接也算入链）
   3. 缺 frontmatter
@@ -16,7 +16,8 @@
   9. 子类型一致性  （entity 必填 entity_type、concept 必填 concept_type 且与父目录一致；source 必填 source_type）
   10. 转述级警示   （evidence_level 为 C/D 的页正文必须含 ⚠️）
   11. 等级引用可溯 （"X 级（出处：…）"的等级字母合法、出处页存在）
-  12. 结构计数     （文件数 / 磁盘占用 / 各分类页数）
+  12. 逐条覆盖     （collection 页核查表的主张行必须带吻合度或等级引用；未全覆盖只告警、不判死）
+  13. 结构计数     （文件数 / 磁盘占用 / 各分类页数）
 纯标准库、只读、不改任何文件。退出码恒为 0，除非库根不存在。
 """
 import os
@@ -46,6 +47,9 @@ LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 EMOJI_RE = re.compile("🟢|🟡|🔴")
 DATE_RE = re.compile(r"\[?(\d{4}-\d{2}-\d{2})")
 GRADE_REF_RE = re.compile(r"([A-Z])\s*级（出处：([^）]+)）")
+NUM_ROW_RE = re.compile(r"^\|\s*#?\d+\s*\|")
+SEP_ROW_RE = re.compile(r"^\|[\s:\-—|]+\|$")
+BG_RE = re.compile(r"—\s*背景共识")
 
 PAGE_TYPES = {"index", "overview", "collection", "entity", "concept", "source",
               "analysis", "comparison", "question"}
@@ -261,7 +265,26 @@ def main():
                 ref_bad.append("%s: 出处不存在 -> %s" % (rel, t))
     print("  无" if not ref_bad else "\n".join("  " + x for x in ref_bad))
 
-    # 12. 结构计数（排除 .git，避免计数被版本库对象淹没）
+    # 12. 逐条覆盖（collection 页核查表的主张行须带吻合度或等级引用；未全覆盖只告警）
+    section("逐条覆盖")
+    cover_bad = []
+    for rel, path in sorted(pages.items()):
+        if types.get(rel) != "collection":
+            continue
+        claims, uncovered = 0, []
+        for ln, line in enumerate(read(path).splitlines(), 1):
+            if not line.startswith("|") or SEP_ROW_RE.match(line):
+                continue
+            if NUM_ROW_RE.match(line) or EMOJI_RE.search(line):
+                claims += 1
+                if not (EMOJI_RE.search(line) or "级（出处" in line or BG_RE.search(line)):
+                    uncovered.append("L%d %s" % (ln, line.strip()[:36]))
+        if uncovered:
+            cover_bad.append("%s: %d/%d 主张行未标（%s）"
+                             % (rel, len(uncovered), claims, "；".join(uncovered[:3])))
+    print("  全覆盖" if not cover_bad else "\n".join("  ⚠️ " + x for x in cover_bad))
+
+    # 13. 结构计数（排除 .git，避免计数被版本库对象淹没）
     section("结构计数")
     files_all = []
     for d, s, fs in os.walk(ROOT):

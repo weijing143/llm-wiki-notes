@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-10-02 · 页级定级规则 + 逐条覆盖检查（WIKI.md v3.3）
+
+- 定级约定补**木桶原则**：collection 页级 `evidence_level` 取表内最低来源等级；全部主张无外部来源才允许 N/A
+- `wiki-lint.py` 第 13 项「逐条覆盖」：collection 页核查表的主张行（编号行或含 🟢🟡🔴 的行）必须带吻合度或等级引用，未全覆盖输出 ⚠️ 告警转人工
+- `WIKI.md` v3.2 → v3.3：载体分工表述修正（collection 先于 entity/concept），lint 清单扩至 13 项
+
 ## 2026-10-02 · 校验体系补全（WIKI.md v3.2）
 
 - `wiki-lint.py` 由 8 项扩至 **12 项**：新增 type 完整性（每页必填 type 且值合法）、子类型一致性（entity/concept 必填子类型且与父目录一致，source 必填 source_type）、转述级警示（C/D 级页正文必须含 ⚠️）、等级引用可溯（`X 级（出处：…）`字母合法 + 出处存在）

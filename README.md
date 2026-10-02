@@ -51,7 +51,7 @@ wiki/                          # 知识库层
 python3 scripts/wiki-lint.py
 ```
 
-八类检查 → 十二类：断链、孤儿页、缺 frontmatter、`updated` 与 mtime 漂移、index 重复区块、`log.md` 漏记、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、type 完整性、子类型一致性、转述级警示、等级引用可溯、结构计数。纯标准库、只读。
+十二类检查 → 十三类：断链、孤儿页、缺 frontmatter、`updated` 与 mtime 漂移、index 重复区块、`log.md` 漏记、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、type 完整性、子类型一致性、转述级警示、等级引用可溯、逐条覆盖、结构计数。纯标准库、只读。
 
 ## 已知边界
 
