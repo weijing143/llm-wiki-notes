@@ -3,7 +3,7 @@ title: AI制药行业全景 2026-08
 type: collection
 evidence_level: A
 created: 2026-08-25
-updated: 2026-10-01
+updated: 2026-10-02
 sources: [raw/notes/douyin-ai-pharma-2026-08-25]
 tags: [ai-pharma, life-science, ai-industry, collection]
 related: [[overview]]

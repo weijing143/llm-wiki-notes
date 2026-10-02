@@ -32,6 +32,7 @@
 README.md
 WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 规则
 LICENSE
+scripts/wiki-lint.py           # 结构自检：断链 / 孤儿页 / 定级完整性 / 结构计数
 raw/                           # 源文档层（只写不改，作溯源头）
   articles/                     网页原文的出处卡片
   notes/                        视频 / API / 检索快照
@@ -54,6 +55,14 @@ wiki/                          # 知识库层
 | [OpenAI《An Alien Mind》异星心智 2026-09](wiki/collections/openai-alien-mind-2026.md) | RSI / CoT 监控可靠性 / 价值对齐 + 6 条分级核查 |
 
 方法论与概念页见 [`wiki/overview.md`](wiki/overview.md)。
+
+## 自检
+
+```bash
+python3 scripts/wiki-lint.py
+```
+
+八类检查：断链、孤儿页、缺 frontmatter、`updated` 与 mtime 漂移、index 重复区块、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、结构计数。纯标准库、只读。
 
 ## 已知边界
 

@@ -3,7 +3,7 @@ title: OpenAI 首席科学家《An Alien Mind》异星心智 2026-09
 type: collection
 evidence_level: A
 created: 2026-09-08
-updated: 2026-10-01
+updated: 2026-10-02
 sources: [raw/notes/openai-alien-mind-2026-09-06]
 tags: [openai, alignment, rsi, ai-safety, collection]
 related: [[overview]]

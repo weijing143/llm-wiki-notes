@@ -22,7 +22,7 @@ updated: 2026-10-01
 |---|---|---|
 | 源文档 | `raw/`（notes · articles · transcripts · papers · assets · data） | 不可变、只写不改；数字标抓取日期，作溯源头 |
 | 知识库 | `wiki/`（index · overview · collections · entities · concepts · sources） | 由人工 + agent 协作维护；交叉引用用 `[[页面路径]]` |
-| 配置 / 日志 | `WIKI.md`（本文件） · `log.md` | 规则与操作留痕 |
+| 配置 | `WIKI.md`（本文件） | 规则与约定（定级 / 入库 / lint）；操作留痕 `log.md` 只保留在本地私有库，不进公开版本 |
 
 **分类目录按需创建**：现有 `entities/people`、`entities/organizations`、`concepts/theories`、`concepts/methods`、`sources/articles`、`collections`；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时 `mkdir` 即可。
 
@@ -68,7 +68,7 @@ concepts:
 - 摘要与核查表不一致时**以表为准**，并在原处留「勘误」注记，不静默替换
 - 跨页**同形态主张判定必须一致**
 - `source` 页等级空白会波及全部下游页 → 优先修
-- 自动校验：`scripts/wiki-lint.py` 第 7 项（定级完整性）
+- 自动校验：`scripts/wiki-lint.py` 第 7 项（定级完整性），运行 `python3 scripts/wiki-lint.py`
 
 ## 入库规则（Ingest）
 
@@ -95,9 +95,9 @@ ingest:
 lint:
   trigger: manual                 # 手动执行；脚本 scripts/wiki-lint.py（无自动调度）
   cadence: 按需 / 结构变动后        # 例：批量归档后、重建后
-  automated: [断链, 孤儿页, 缺 frontmatter, updated 与 mtime 漂移, index 重复区块, log.md 漏记, 定级完整性, 结构计数]
+  automated: [断链, 孤儿页, 缺 frontmatter, updated 与 mtime 漂移, index 重复区块, 定级完整性, 结构计数]
   manual: [跨页矛盾, 过时声明, 缺失页面, 数据缺口]
-  on_fix: 修完复跑脚本确认全绿；本次改动写进 log.md
+  on_fix: 修完复跑脚本确认全绿
 ```
 
 ## Output Preferences

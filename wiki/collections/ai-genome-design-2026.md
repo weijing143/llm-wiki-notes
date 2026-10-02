@@ -3,7 +3,7 @@ title: AI 基因组设计/合成生物学 2026-08
 type: collection
 evidence_level: A
 created: 2026-08-26
-updated: 2026-10-01
+updated: 2026-10-02
 sources: [raw/notes/douyin-ai-phage-2026-08-26]
 tags: [ai-biology, genome-design, synthetic-bio, evo, collection]
 related: [[collections/ai-pharma-2026]]
