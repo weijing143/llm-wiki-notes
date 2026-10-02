@@ -1,0 +1,29 @@
+# Obsidian
+.obsidian/
+
+# qmd index
+.qmd-index/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
