@@ -22,7 +22,7 @@ updated: 2026-10-02
 |---|---|---|
 | 源文档 | `raw/`（notes · articles · transcripts · papers · assets · data） | 不可变、只写不改；数字标抓取日期，作溯源头 |
 | 知识库 | `wiki/`（index · overview · collections · entities · concepts · sources） | 由人工 + agent 协作维护；交叉引用用 `[[页面路径]]` |
-| 配置 | `WIKI.md`（本文件） | 规则与约定（定级 / 入库 / lint）；操作日志不在本样本发布范围内 |
+| 配置 / 日志 | `WIKI.md`（本文件）· `log.md` | 规则与约定（定级 / 入库 / lint）；`log.md` 记录操作留痕（本样本只保留格式与机制，条目内容不发布） |
 
 **分类目录按需创建**：现有 `entities/people`、`entities/organizations`、`concepts/theories`、`concepts/methods`、`sources/articles`、`collections`；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时 `mkdir` 即可。
 
@@ -81,7 +81,7 @@ ingest:
     - raw/<分类>/<主题>-<日期>.md         # 原始快照；数字标抓取日期
     - wiki/collections/<主题>-<年>.md     # 或向现有页追加
     - wiki/index.md                      # 登记
-    - log.md                             # 操作留痕（不在本样本发布范围内）
+    - log.md                             # 操作留痕（机制保留；条目内容不随样本发布）
     - git commit                          # 收尾提交
   page_decision: 同主题续条 → 追加现有页；同域不同主题 → 新建独立页
   collection_page_sections: [核心结论, 核查表（带图例）, 反方视角, 后续跟踪点, 归档记录]
@@ -95,7 +95,7 @@ ingest:
 lint:
   trigger: manual                 # 手动执行；脚本 scripts/wiki-lint.py（无自动调度）
   cadence: 按需 / 结构变动后        # 例：批量归档后、重建后
-  automated: [断链, 孤儿页, 缺 frontmatter, updated 与 mtime 漂移, index 重复区块, 定级完整性, 结构计数]
+  automated: [断链, 孤儿页, 缺 frontmatter, updated 与 mtime 漂移, index 重复区块, log.md 漏记, 定级完整性, 结构计数]
   manual: [跨页矛盾, 过时声明, 缺失页面, 数据缺口]
   on_fix: 修完复跑脚本确认全绿
 ```

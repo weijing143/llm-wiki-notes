@@ -33,6 +33,7 @@ README.md
 WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 规则
 LICENSE
 CHANGELOG.md                   # 内容变更史：入库、核查修正、规则演进
+log.md                         # 操作留痕：只保留格式与机制（条目内容不随样本发布）
 scripts/wiki-lint.py           # 结构自检：断链 / 孤儿页 / 定级完整性 / 结构计数
 raw/                           # 源文档层（只写不改，作溯源头）
   articles/                     网页原文的出处卡片
@@ -63,7 +64,7 @@ wiki/                          # 知识库层
 python3 scripts/wiki-lint.py
 ```
 
-八类检查：断链、孤儿页、缺 frontmatter、`updated` 与 mtime 漂移、index 重复区块、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、结构计数。纯标准库、只读。
+八类检查：断链、孤儿页、缺 frontmatter、`updated` 与 mtime 漂移、index 重复区块、`log.md` 漏记、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、结构计数。纯标准库、只读。
 
 ## 已知边界
 

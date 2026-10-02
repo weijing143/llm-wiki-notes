@@ -52,7 +52,7 @@
 - `index.md` 重建：全量登记 + 按类型分组 + 补 `type: index`
 - `overview.md` 首次真正合成：跨专题主题 / 主要实体 / 核心概念 / 开放问题 / **知识缺口**
 - 入库规则收口：仅在被明确要求时触发；**日常对话与查询结果一律不入库**（query 只答，不写回）；数字必须本次实时抓取并标日期，不凭记忆代填
-- 自动校验 `scripts/wiki-lint.py` 扩到 8 项：断链 / 孤儿页 / 缺 frontmatter / `updated` 漂移 / index 重复区块 / 定级完整性 / 结构计数 / 源码归属
+- 自动校验 `scripts/wiki-lint.py` 扩到 8 项：断链 / 孤儿页 / 缺 frontmatter / `updated` 漂移 / index 重复区块 / `log.md` 漏记 / 定级完整性 / 结构计数
 
 ## 2026-10-02 · 公开版本发布
 
