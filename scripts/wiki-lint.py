@@ -21,6 +21,13 @@ import sys
 import datetime
 import collections
 
+# Windows GBK 控制台打印 emoji 会 UnicodeEncodeError，强制 UTF-8 输出
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
+
 if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
     print(__doc__)
     sys.exit(0)

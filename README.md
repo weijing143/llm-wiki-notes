@@ -32,12 +32,17 @@ scripts/wiki-lint.py           # 结构自检：断链 / 孤儿页 / 定级完�
 raw/                           # 源文档层（只写不改，作溯源头）
   articles/                     网页原文的出处卡片
   notes/                        视频 / API / 检索快照
+  papers/                       论文 PDF（空槽备用）
+  transcripts/                  会议 / 访谈转写（空槽备用）
+  assets/                       图片 / 附件（空槽备用）
+  data/                         独立数据集文件（空槽备用）
 wiki/                          # 知识库层
   index.md                      全部页面目录
   collections/                  专题页：核查表所在
   entities/                     实体页：人 / 组织
   concepts/                     概念页：理论 / 方法
   sources/                      来源摘要页，承载 evidence_level
+  analyses/ · comparisons/ · questions/ · sources/papers/   # 空槽备用
 ```
 
 ## 自检

@@ -1,20 +1,20 @@
 ---
 project: llm-wiki-notes
-domain: ai-industry-notes
+domain: general
 created: 2026-07-23
-version: 3.0
+version: 3.1
 updated: 2026-10-02
 ---
 
 # Wiki Configuration
 
-> 本仓库是 **LLM Wiki 模式**的公开实践样本：外部内容先原样存档到 `raw/`（不可变），再经核查沉淀为 `wiki/` 结构化知识页。
+> 本仓库是 **LLM Wiki 模式**的可复用空模板：只含框架（规则 + 目录骨架 + 自检脚本），尚未入库任何内容。外部内容先原样存档到 `raw/`（不可变），再经核查沉淀为 `wiki/` 结构化知识页。
 
 ## Project Info
 
-- **Name**: LLM Wiki Notes ｜ **Domain**: ai-industry-notes
+- **Name**: LLM Wiki Notes ｜ **Domain**: general
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
-- **Created**: 2026-07-23 ｜ **配置版本**: 3.0
+- **Created**: 2026-07-23 ｜ **配置版本**: 3.1
 
 ## 三层结构
 
@@ -22,11 +22,11 @@ updated: 2026-10-02
 |---|---|---|
 | 源文档 | `raw/`（notes · articles · transcripts · papers · assets · data） | 不可变、只写不改；数字标抓取日期，作溯源头 |
 | 知识库 | `wiki/`（index · overview · collections · entities · concepts · sources） | 由人工 + agent 协作维护；交叉引用用 `[[页面路径]]` |
-| 配置 / 日志 | `WIKI.md`（本文件）· `log.md` | 规则与约定（定级 / 入库 / lint）；`log.md` 记录操作留痕（本样本只保留格式与机制，条目内容不发布） |
+| 配置 / 日志 | `WIKI.md`（本文件）· `log.md` | 规则与约定（定级 / 入库 / lint）；`log.md` 记录操作留痕（当前为空模板，暂无条目） |
 
-**分类目录按需创建**：现有 `entities/people`、`entities/organizations`、`concepts/theories`、`concepts/methods`、`sources/articles`、`collections`；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时 `mkdir` 即可。
+**分类目录按需创建**：现有 `entities/people`、`entities/organizations`、`concepts/theories`、`concepts/methods`、`sources/articles`、`collections`，以及备用空槽 `analyses`、`comparisons`、`questions`、`sources/papers`（均 .gitkeep 占位）；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时 `mkdir` 即可。
 
-**`raw/` 落点规则**：`articles/` 网页原文 ｜ `notes/` **实际主力**——视频快照、API 快照、检索笔记均落此处 ｜ `papers/` 论文 PDF ｜ `assets/` 图片 / 附件 ｜ `transcripts/` 会议 / 访谈转写 ｜ `data/` 独立数据集文件。后两者目前为空槽，保留备用、不做迁移。
+**`raw/` 落点规则**：`articles/` 网页原文 ｜ `notes/` **实际主力**——视频快照、API 快照、检索笔记均落此处 ｜ `papers/` 论文 PDF ｜ `assets/` 图片 / 附件 ｜ `transcripts/` 会议 / 访谈转写 ｜ `data/` 独立数据集文件。后四者目前为空槽（.gitkeep 占位），保留备用、不做迁移。
 
 ## Entity Types
 
@@ -81,7 +81,7 @@ ingest:
     - raw/<分类>/<主题>-<日期>.md         # 原始快照；数字标抓取日期
     - wiki/collections/<主题>-<年>.md     # 或向现有页追加
     - wiki/index.md                      # 登记
-    - log.md                             # 操作留痕（机制保留；条目内容不随样本发布）
+    - log.md                             # 操作留痕
     - git commit                          # 收尾提交
   page_decision: 同主题续条 → 追加现有页；同域不同主题 → 新建独立页
   collection_page_sections: [核心结论, 核查表（带图例）, 反方视角, 后续跟踪点, 归档记录]
@@ -109,4 +109,4 @@ output:
 ```
 
 ---
-*配置版本 3.0 ｜ 公开样本版*
+*配置版本 3.1 ｜ 空模板版*

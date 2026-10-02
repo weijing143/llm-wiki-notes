@@ -43,9 +43,13 @@ updated: 2026-10-02
 
 （暂无）
 
+### Papers
+
+（暂无）
+
 ## 未启用分类
 
-`analyses` / `comparisons` / `questions` / `sources/papers` 目录已备、暂无页面；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时按需创建。
+`analyses` / `comparisons` / `questions` / `sources/papers` 目录已建（.gitkeep 占位）、暂无页面；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时按需创建。
 
 ---
 *手工维护，lint 校验一致性；入库时同步更新*
