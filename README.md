@@ -32,6 +32,7 @@
 README.md
 WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 规则
 LICENSE
+CHANGELOG.md                   # 内容变更史：入库、核查修正、规则演进
 scripts/wiki-lint.py           # 结构自检：断链 / 孤儿页 / 定级完整性 / 结构计数
 raw/                           # 源文档层（只写不改，作溯源头）
   articles/                     网页原文的出处卡片
