@@ -24,6 +24,7 @@
 
 ```
 README.md
+AGENTS.md                      # agent 操作入口：先读 WIKI.md + 三条核心命令 + 硬边界
 WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 规则（schema 单源）
 LICENSE                        # wiki/ 内容 CC BY 4.0（scripts/ 代码为 MIT，见 scripts/LICENSE）
 CHANGELOG.md                   # 内容变更史
