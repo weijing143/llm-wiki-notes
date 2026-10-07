@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-10-07 · 工具链硬化（WIKI.md v3.4）
+
+- `wiki-lint.py` **退出码分级**：7 项硬告警（断链 / 缺 frontmatter / 定级完整性 / type / 子类型 / 转述警示 / 引用可溯）存在即退出码 1；5 项软告警默认只警告，`--strict` 下判死；新增 `--json` 机器可读输出
+- **日期基准修复**：`updated` 漂移与 `log.md` 漏记两项改用 **git 提交日期**（clone/checkout 会重置 mtime，旧版在新克隆仓库系统性误报）；无 git 历史时降级 mtime 并在输出中标注
+- **schema 单源化**：新增 `scripts/wiki_schema.py`，lint / wiki-new 直接解析 `WIKI.md` 的 yaml 块获取允许值与目录映射，改 schema 不再双份维护；解析失败回退内置默认值并告警
+- 解析健壮性：frontmatter 值容忍引号包裹（`evidence_level: "A"`）；`[[链接]]` 支持锚点 `#` 与 `.md` 后缀；半角 `X 级(出处:…)` 显式报格式错误
+- 新增 `scripts/wiki-new.py` **建页脚手架** + `templates/` 五份模板：按 schema 落目录、自动填 frontmatter、拒绝覆盖，从建页源头消除 lint 第 3 / 8 / 9 项错误
+- 新增 `tests/test_wiki.py`：17 个用例（好/坏 fixture + 脚手架）回归自测；新增 `.github/workflows/lint.yml`：push / PR 跑 `--strict` + 自测（fetch-depth 0 保证 git 日期基准）
+- 许可证拆分：`wiki/` 内容 CC BY 4.0 不变，`scripts/` 与 `tests/` 代码改标 MIT（`scripts/LICENSE`）
+
 ## 2026-10-02 · 页级定级规则 + 逐条覆盖检查（WIKI.md v3.3）
 
 - 定级约定补**木桶原则**：collection 页级 `evidence_level` 取表内最低来源等级；全部主张无外部来源才允许 N/A

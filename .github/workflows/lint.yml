@@ -1,0 +1,21 @@
+name: wiki-lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # updated 漂移 / log 漏记检查以 git 提交日期为基准，需要完整历史
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: 结构自检（软告警也判死）
+        run: python3 scripts/wiki-lint.py --strict
+      - name: 回归自测
+        run: python3 -m unittest discover -s tests -v

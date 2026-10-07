@@ -2,8 +2,8 @@
 project: llm-wiki-notes
 domain: general
 created: 2026-07-23
-version: 3.3
-updated: 2026-10-02
+version: 3.4
+updated: 2026-10-07
 ---
 
 # Wiki Configuration
@@ -14,7 +14,7 @@ updated: 2026-10-02
 
 - **Name**: LLM Wiki Notes ｜ **Domain**: general
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
-- **Created**: 2026-07-23 ｜ **配置版本**: 3.3
+- **Created**: 2026-07-23 ｜ **配置版本**: 3.4
 
 ## 三层结构
 
@@ -31,6 +31,8 @@ updated: 2026-10-02
 ## Page Types
 
 每页 frontmatter **必填 `type:`**，允许值：
+
+> **schema 单源**：`scripts/wiki-lint.py` 与 `scripts/wiki-new.py` 直接解析本文件的 ```yaml 块获取允许值与目录映射——改 schema 只改本文件，脚本无需同步。解析失败时脚本回退内置默认值并打印告警。
 
 ```yaml
 page_types:
@@ -128,14 +130,42 @@ ingest:
 
 ```yaml
 lint:
-  trigger: manual                 # 手动执行；脚本 scripts/wiki-lint.py（无自动调度）
+  trigger: manual + CI            # 本地手动执行；push / PR 时 GitHub Actions 跑 --strict
   cadence: 按需 / 结构变动后        # 例：批量归档后、重建后
   automated:                      # 共 13 项，见脚本 docstring
-    [断链, 孤儿页, 缺 frontmatter, updated 与 mtime 漂移, index 重复区块,
+    [断链, 孤儿页, 缺 frontmatter, updated 与变更日期漂移, index 重复区块,
      log.md 漏记, 定级完整性, type 完整性, 子类型一致性, 转述级警示, 等级引用可溯,
      逐条覆盖, 结构计数]
+  severity:                       # v3.4 起分级，决定退出码
+    hard: [断链, 缺 frontmatter, 定级完整性, type 完整性, 子类型一致性,
+           转述级警示, 等级引用可溯]        # 存在即退出码 1
+    soft: [孤儿页, updated 漂移, index 重复区块, log.md 漏记, 逐条覆盖]
+                                        # 默认不影响退出码；--strict 下也判死
+    info: [结构计数]                      # 不参与判死
+  exit_codes: {0: 全绿或仅软告警, 1: 硬告警（--strict 含软告警）, 2: 库根不存在}
+  date_basis: git 提交日期（clone/checkout 会重置 mtime）；无 git 历史时降级 mtime 并在输出中标注
+  flags: [--strict, --json]       # --json 供自动化消费（含各项 violations 与退出码）
+  schema_source: 允许值 / 目录映射解析自本文件 yaml 块（单源）
+  self_test: python3 -m unittest discover -s tests -v   # 脚本回归自测
   manual: [跨页矛盾, 过时声明, 缺失页面, 数据缺口]
   on_fix: 修完复跑脚本确认全绿
+```
+
+## 建页脚手架（wiki-new）
+
+```yaml
+scaffold:
+  script: scripts/wiki-new.py
+  templates: templates/           # collection / entity / concept / source / generic
+  usage:
+    - python3 scripts/wiki-new.py collection <slug> --title 标题
+    - python3 scripts/wiki-new.py entity <slug> --entity-type person
+    - python3 scripts/wiki-new.py concept <slug> --concept-type theory
+    - python3 scripts/wiki-new.py source <slug> --evidence-level C
+  behavior:
+    - 按 schema 目录映射落到正确目录，自动填 created / updated / type / 子类型
+    - 目标已存在拒绝覆盖；entity_type / concept_type 不在菜单内直接报错
+    - 只建文件，index.md 登记与 log.md 留痕仍按入库四件套执行
 ```
 
 ## Output Preferences
@@ -147,4 +177,4 @@ output:
 ```
 
 ---
-*配置版本 3.3 ｜ 空模板版*
+*配置版本 3.4 ｜ 空模板版*
