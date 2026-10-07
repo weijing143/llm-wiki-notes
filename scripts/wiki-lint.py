@@ -6,14 +6,16 @@
     python3 scripts/wiki-lint.py --strict          # 软告警也判死（退出码 1）
     python3 scripts/wiki-lint.py --json            # 机器可读输出（供自动化消费）
 
-检查十五类（括号内为严重级）：
-  1. 断链          [[路径]] 指向不存在的页（硬）
-  2. 孤儿页        无任何入链，index.md 的链接也算入链（软）
+检查十六类（括号内为严重级）：
+  1. 断链          正文 [[路径]] 与 frontmatter related: 指向不存在的页（硬）
+  2. 孤儿页        正文无入链且未被 index 收录（软）；仅被 index 收录的另列候选，
+                   因为 index.md 由脚本生成、必然收录全部页面，算作入链会让本项永不触发
   3. 缺 frontmatter（硬）
   4. updated 与最后变更日期漂移（软；取 git 提交日期，无 git 时降级 mtime 并标注）
   5. index.md 重复的 H2 区块 / 重复条目（软）
   6. log.md 漏记   最新内容页日期 > 最新日志日期（软，需人工判读）
-  7. 定级完整性    source/collection 必填 evidence_level；含 🟢🟡🔴 的表须自带图例（硬）
+  7. 定级完整性    source/collection 必填 evidence_level；含 🟢🟡🔴 的表格块须自带
+                   图例（表前 6 行内或表内；硬）——正文引用标记不算表
   8. type 完整性   每页必填 type，且值在允许集合内（硬）
   9. 子类型一致性  entity 必填 entity_type、concept 必填 concept_type 且与父目录一致；
                    source 必填 source_type（硬）
@@ -25,7 +27,9 @@
                    却无对应页（软，半自动化的"缺失交叉引用 / 缺失页面"候选）
   14. 过时声明候选 内容页 updated 距今 > --stale-days（默认 90），或 > 30 天且含
                    "最新/目前/今年"等时效词（软，半自动化的"过时声明"候选）
-  15. 结构计数     文件数 / 磁盘占用 / 各分类页数（信息，不参与判死）
+  15. raw 不可变    git 历史中 raw/ 只允许新增；当前树中仍存在的文件被修改 /
+                   删除 / 重命名即告警（软；无 git 时跳过——原仅靠约定）
+  16. 结构计数     文件数 / 磁盘占用 / 各分类页数（信息，不参与判死）
 
 退出码：0 全绿或仅软告警；1 存在硬告警（--strict 时软告警也算）；2 库根不存在。
 schema 允许值从 WIKI.md 的 yaml 块解析（单源），解析失败回退内置默认值并告警。
@@ -57,6 +61,7 @@ GRADE_REF_HALF_RE = re.compile(r"([A-Z])\s*级\(出处\s*[:：]\s*([^)]+)\)")
 NUM_ROW_RE = re.compile(r"^\|\s*#?\d+\s*\|")
 SEP_ROW_RE = re.compile(r"^\|[\s:\-—|]+\|$")
 BG_RE = re.compile(r"—\s*背景共识")
+RELATED_RE = re.compile(r"^related:\s*\[(.*?)\]\s*$", re.M)
 
 HARD, SOFT, INFO = "hard", "soft", "info"
 
@@ -74,6 +79,36 @@ def collect_pages(wiki_dir):
 
 def mtime_day(path):
     return datetime.date.fromtimestamp(os.path.getmtime(path))
+
+
+def tables_without_legend(text):
+    """返回“含 🟢🟡🔴 但缺图例”的表格块起始行号（1 基）。
+
+    只按表格块（连续的 | 行）判定，图例须出现在表前 6 行内或表内：
+    正文里正常引用 🟢🟡🔴（如“本条判定 🟡”）不再被误判为缺图例的表，
+    真缺图例时给出精确行号。"""
+    lines = text.splitlines()
+    starts, inside = [], False
+    for i, ln in enumerate(lines):
+        if ln.startswith("|"):
+            if not inside:
+                starts.append(i)
+            inside = True
+        else:
+            inside = False
+    bad = []
+    for s0 in starts:
+        end = s0
+        while end < len(lines) and lines[end].startswith("|"):
+            end += 1
+        block = lines[s0:end]
+        if not EMOJI_RE.search("\n".join(block)):
+            continue
+        legend = (any("图例" in x for x in lines[max(0, s0 - 6):s0])
+                  or any("图例" in x for x in block))
+        if not legend:
+            bad.append(s0 + 1)
+    return bad
 
 
 def git_dates(root):
@@ -160,19 +195,37 @@ def main():
     inbound = collections.defaultdict(set)
     broken = []
     for rel, path in pages.items():
+        if rel == "index":      # index.md 是生成物，它的链接另算（见下）
+            continue
         for raw in LINK_RE.findall(read(path)):
             tgt = normalize(raw)
             if tgt in pages:
                 inbound[tgt].add(rel)
             else:
                 broken.append("%s -> %s" % (rel, raw.strip()))
-    for raw in LINK_RE.findall(index_txt):
-        tgt = normalize(raw)
-        if tgt in pages:
-            inbound[tgt].add("index")
+    # frontmatter related: 是交叉引用的另一半，同样必须可解析（原为校验盲区）
+    for rel, path in pages.items():
+        m = RELATED_RE.search(frontmatter(path) or "")
+        if not m:
+            continue
+        for item in m.group(1).split(","):
+            item = item.strip().strip('"').strip("'")
+            if item and normalize(item) not in pages:
+                broken.append("%s (related:) -> %s" % (rel, item))
+    # index.md 由脚本生成、必然收录全部页面：把它的链接计入入链会让孤儿页检查
+    # 永远不触发（实测：新页建好后跑一次 index 重建，孤儿告警即消失）。故 index
+    # 收录单列候选，孤儿只数正文入链。
+    index_linked = {normalize(x) for x in LINK_RE.findall(index_txt)}
     orphans = [p for p in sorted(pages) if p != "index" and not inbound[p]]
+    only_idx = [p for p in orphans if p in index_linked]
+    orph_lines = orphans or ["无"]
+    if only_idx:
+        orph_lines = (orphans or []) + [
+            "仅被 index 收录、正文无入链（候选，不判死；建议补 related 或正文 [[]]）:"] \
+            + ["  " + x for x in only_idx]
+    true_orphans = [p for p in orphans if p not in index_linked]
     rec("断链", HARD, broken, broken or ["0 条"])
-    rec("孤儿页", SOFT, orphans, orphans or ["无"])
+    rec("孤儿页", SOFT, true_orphans, orph_lines)
 
     # 3 + 4. frontmatter 完整性与 updated/变更日期漂移
     no_fm, drift = [], []
@@ -234,9 +287,9 @@ def main():
             ev = fm_value(fm, "evidence_level")
             if ev not in ("A", "B", "C", "D", "N/A"):
                 grade_missing.append("%s (%s, evidence_level=%r)" % (rel, ty, ev))
-        txt = read(path)
-        if EMOJI_RE.search(txt) and "图例" not in txt:
-            legend_missing.append(rel)
+        for ln in tables_without_legend(read(path)):
+            legend_missing.append(
+                "%s: L%d 起的核查表缺图例（表前 6 行内或表内需含“图例”）" % (rel, ln))
     grade_msgs = (["缺 evidence_level（source/collection 必填）:"]
                   + ["  " + x for x in grade_missing] if grade_missing else []) \
         + (["含 🟢🟡🔴 但缺图例的表:"]
@@ -379,7 +432,37 @@ def main():
             stale_bad.append("%s: updated 距今 %d 天且含时效词，需复核" % (rel, age))
     rec("过时声明候选", SOFT, stale_bad, stale_bad or ["无"])
 
-    # 15. 结构计数（信息；排除 .git）
+    # 15. raw/ 不可变（软；无 git 跳过。规范硬边界此前无任何机器兜底）
+    raw_bad, raw_note = [], []
+    try:
+        out = subprocess.run(
+            ["git", "-C", root, "log", "--format=@%cs", "--name-status", "--", "raw"],
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=60)
+        if out.returncode != 0:
+            raw_note = ["跳过：非 git 仓库（raw 不可变仅靠约定）"]
+        else:
+            raw_note = ["无（raw 仅有新增记录）"]
+            cur = None
+            for line in out.stdout.splitlines():
+                if line.startswith("@"):
+                    cur = line[1:]
+                elif line.strip():
+                    status, _, path = line.partition("\t")
+                    path = path.strip()
+                    # 已从工作区移除的文件（如样本期清理）不追究，只看当前树
+                    if (not path or status[:1] not in ("M", "D", "R")
+                            or not os.path.exists(os.path.join(root, path))):
+                        continue
+                    raw_bad.append("%s 于 %s 被%s（raw 只应新增）" % (
+                        path, cur,
+                        {"M": "修改", "D": "删除", "R": "重命名"}[status[:1]]))
+    except (OSError, subprocess.SubprocessError):
+        raw_note = ["跳过：git 查询失败"]
+    rec("raw 不可变", SOFT, raw_bad,
+        (["基准: git 历史（只应出现 A）"] + raw_bad) if raw_bad else raw_note)
+
+    # 16. 结构计数（信息；排除 .git）
     files_all = []
     for d, subdirs, fs in os.walk(root):
         subdirs[:] = [x for x in subdirs if x != ".git"]

@@ -4,6 +4,9 @@
 index.md 由本脚本生成，禁止手改：入库四件套的"登记"动作 = 重跑本脚本。
 CI 用 --check 校验漂移（有人手改或入库后没重新生成都会报出来）。
 
+生成物只依赖页面内容，不写入运行日：updated 取页内最新 updated，页脚不带日期；
+否则 --check 在“非重建当天”必然误报（内容没变也会红）。
+
 用法:
     python3 scripts/wiki-index.py            # 重建 wiki/index.md
     python3 scripts/wiki-index.py --check    # 只校验：与页面现状不一致则退出码 1
@@ -64,7 +67,8 @@ def entry(p):
     return "- [[%s|%s]]（updated: %s）" % (p["rel"], p["title"], p["updated"])
 
 
-def build(schema, metas, created, today):
+def build(schema, metas, created):
+    latest = max([p["updated"] for p in metas if p["updated"] != "?"] or [created])
     ent_dirs = list(schema["entity_dir_type"].items())      # [(dir, type)]
     con_dirs = list(schema["concept_dir_type"].items())
 
@@ -75,7 +79,7 @@ def build(schema, metas, created, today):
         return [p for p in metas if p["parts"][0] == prefix]
 
     out = ["---", "title: LLM Wiki Index", "type: index",
-           "created: " + created, "updated: " + today, "---", "",
+           "created: " + created, "updated: " + latest, "---", "",
            "# LLM Wiki Index", "", INTRO.format(n=len(metas)), ""]
 
     def emit_group(title, pages, sub=None):
@@ -129,7 +133,7 @@ def build(schema, metas, created, today):
                if idle else "（全部分类均有页面）")
     out.append("")
     out.append("---")
-    out.append("*由 scripts/wiki-index.py 生成于 %s；入库后重跑本脚本更新*" % today)
+    out.append("*由 scripts/wiki-index.py 生成；内容以各页 frontmatter 为准，入库后重跑本脚本更新*")
     out.append("")
     return "\n".join(out)
 
@@ -156,7 +160,7 @@ def main():
     old = open(idx_path, encoding="utf-8").read() if os.path.isfile(idx_path) else ""
     created = fm_value(frontmatter(idx_path), "created") \
         if os.path.isfile(idx_path) else None
-    new = build(schema, metas, created or today, today)
+    new = build(schema, metas, created or today)
 
     if args.diff:
         sys.stdout.writelines(difflib.unified_diff(

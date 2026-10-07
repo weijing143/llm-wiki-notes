@@ -81,4 +81,4 @@ updated: 2026-10-07
 `entities/people`、`entities/products`、`entities/technologies`、`entities/events`、`concepts/theories`、`concepts/methods`、`concepts/frameworks`、`concepts/metrics`、`concepts/principles`、`analyses`、`comparisons`、`questions`（暂无页面，按需创建）
 
 ---
-*由 scripts/wiki-index.py 生成于 2026-10-07；入库后重跑本脚本更新*
+*由 scripts/wiki-index.py 生成；内容以各页 frontmatter 为准，入库后重跑本脚本更新*
