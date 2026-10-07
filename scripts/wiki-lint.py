@@ -8,7 +8,8 @@
 
 检查十五类（括号内为严重级）：
   1. 断链          正文 [[路径]] 与 frontmatter related: 指向不存在的页（硬）
-  2. 孤儿页        无任何入链，index.md 的链接也算入链（软）
+  2. 孤儿页        正文无入链且未被 index 收录（软）；仅被 index 收录的另列候选，
+                   因为 index.md 由脚本生成、必然收录全部页面，算作入链会让本项永不触发
   3. 缺 frontmatter（硬）
   4. updated 与最后变更日期漂移（软；取 git 提交日期，无 git 时降级 mtime 并标注）
   5. index.md 重复的 H2 区块 / 重复条目（软）
@@ -192,6 +193,8 @@ def main():
     inbound = collections.defaultdict(set)
     broken = []
     for rel, path in pages.items():
+        if rel == "index":      # index.md 是生成物，它的链接另算（见下）
+            continue
         for raw in LINK_RE.findall(read(path)):
             tgt = normalize(raw)
             if tgt in pages:
@@ -207,13 +210,20 @@ def main():
             item = item.strip().strip('"').strip("'")
             if item and normalize(item) not in pages:
                 broken.append("%s (related:) -> %s" % (rel, item))
-    for raw in LINK_RE.findall(index_txt):
-        tgt = normalize(raw)
-        if tgt in pages:
-            inbound[tgt].add("index")
+    # index.md 由脚本生成、必然收录全部页面：把它的链接计入入链会让孤儿页检查
+    # 永远不触发（实测：新页建好后跑一次 index 重建，孤儿告警即消失）。故 index
+    # 收录单列候选，孤儿只数正文入链。
+    index_linked = {normalize(x) for x in LINK_RE.findall(index_txt)}
     orphans = [p for p in sorted(pages) if p != "index" and not inbound[p]]
+    only_idx = [p for p in orphans if p in index_linked]
+    orph_lines = orphans or ["无"]
+    if only_idx:
+        orph_lines = (orphans or []) + [
+            "仅被 index 收录、正文无入链（候选，不判死；建议补 related 或正文 [[]]）:"] \
+            + ["  " + x for x in only_idx]
+    true_orphans = [p for p in orphans if p not in index_linked]
     rec("断链", HARD, broken, broken or ["0 条"])
-    rec("孤儿页", SOFT, orphans, orphans or ["无"])
+    rec("孤儿页", SOFT, true_orphans, orph_lines)
 
     # 3 + 4. frontmatter 完整性与 updated/变更日期漂移
     no_fm, drift = [], []
