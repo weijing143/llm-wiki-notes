@@ -17,7 +17,7 @@ WIKI.md 的 ```yaml 代码块只用到两个 YAML 子集结构：
 import os
 import re
 
-# 内置默认值：与 WIKI.md v3.4 的 yaml 块保持一致；仅作解析失败的兜底
+# 内置默认值：与 WIKI.md v3.7 的 yaml 块保持一致；仅作解析失败的兜底
 DEFAULTS = {
     "page_types": ["index", "overview", "collection", "entity", "concept",
                    "source", "analysis", "comparison", "question"],

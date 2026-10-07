@@ -2,7 +2,7 @@
 project: llm-wiki-notes
 domain: general
 created: 2026-07-23
-version: 3.6
+version: 3.7
 updated: 2026-10-07
 ---
 
@@ -14,7 +14,7 @@ updated: 2026-10-07
 
 - **Name**: LLM Wiki Notes ｜ **Domain**: general
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
-- **Created**: 2026-07-23 ｜ **配置版本**: 3.6
+- **Created**: 2026-07-23 ｜ **配置版本**: 3.7
 
 ## 三层结构
 
@@ -45,7 +45,8 @@ page_types:
     concept: [concept_type]                  # 概念页；concept_type ∈ 概念分类菜单，且与父目录一致
     source: [evidence_level, source_type]    # 来源页；evidence_level 为等级源头；source_type 自由文本
   notes:
-    - evidence_level 取值：A/B/C/D 或 N/A（N/A 仅限全部主张均无外部来源的内部记录页）
+    - evidence_level 取值：A/B/C/D 或 N/A（N/A 仅限全部主张均无外部来源的内部记录页；
+      source 页记录的是外部来源本身，不适用 N/A——lint 暂未强制，靠人工判读）
     - C / D 级页正文必须含 ⚠️ 显式警示（lint 第 10 项）
     - entity / concept 页引用等级须写作 `A 级（出处：collections/<专题>）`（lint 第 11 项校验字母合法 + 出处存在）
 ```
@@ -143,15 +144,15 @@ ingest:
 lint:
   trigger: manual + CI            # 本地手动执行；push / PR 时 GitHub Actions 跑 --strict
   cadence: 按需 / 结构变动后        # 例：批量归档后、重建后
-  automated:                      # 共 15 项，见脚本 docstring
+  automated:                      # 共 16 项，见脚本 docstring
     [断链, 孤儿页, 缺 frontmatter, updated 与变更日期漂移, index 重复区块,
      log.md 漏记, 定级完整性, type 完整性, 子类型一致性, 转述级警示, 等级引用可溯,
-     逐条覆盖, 缺链缺页候选, 过时声明候选, 结构计数]
+     逐条覆盖, 缺链缺页候选, 过时声明候选, raw 不可变, 结构计数]
   severity:                       # v3.4 起分级，决定退出码
     hard: [断链, 缺 frontmatter, 定级完整性, type 完整性, 子类型一致性,
            转述级警示, 等级引用可溯]        # 存在即退出码 1
     soft: [孤儿页, updated 漂移, index 重复区块, log.md 漏记, 逐条覆盖,
-           缺链缺页候选, 过时声明候选]      # 默认不影响退出码；--strict 下也判死
+           缺链缺页候选, 过时声明候选, raw 不可变]   # 默认不影响退出码；--strict 下也判死
     info: [结构计数]                      # 不参与判死
   exit_codes: {0: 全绿或仅软告警, 1: 硬告警（--strict 含软告警）, 2: 库根不存在}
   date_basis: git 提交日期（clone/checkout 会重置 mtime）；无 git 历史时降级 mtime 并在输出中标注
@@ -175,7 +176,8 @@ index_generator:
   rule: wiki/index.md 由脚本生成，禁止手改        # 入库四件套的"登记" = 重跑本脚本
   behavior:
     - 扫描全部页面 frontmatter（type / title / updated），按分类重建目录
-    - 保留 index 页 created，updated 置为生成日
+    - 保留 index 页 created；updated 取页内最新 updated，页脚不带生成日期
+      （生成物只依赖页面内容，--check 在任意运行日都稳定，不会每日误报）
     - 分类结构跟随本文件目录映射，新增子目录类型无需改脚本
   ci: python3 scripts/wiki-index.py --check       # 手改或入库后未重建 → 退出码 1
 ```
@@ -206,4 +208,4 @@ output:
 ```
 
 ---
-*配置版本 3.6*
+*配置版本 3.7*
