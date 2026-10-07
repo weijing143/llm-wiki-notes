@@ -7,7 +7,7 @@
     python3 scripts/wiki-lint.py --json            # 机器可读输出（供自动化消费）
 
 检查十五类（括号内为严重级）：
-  1. 断链          [[路径]] 指向不存在的页（硬）
+  1. 断链          正文 [[路径]] 与 frontmatter related: 指向不存在的页（硬）
   2. 孤儿页        无任何入链，index.md 的链接也算入链（软）
   3. 缺 frontmatter（硬）
   4. updated 与最后变更日期漂移（软；取 git 提交日期，无 git 时降级 mtime 并标注）
@@ -58,6 +58,7 @@ GRADE_REF_HALF_RE = re.compile(r"([A-Z])\s*级\(出处\s*[:：]\s*([^)]+)\)")
 NUM_ROW_RE = re.compile(r"^\|\s*#?\d+\s*\|")
 SEP_ROW_RE = re.compile(r"^\|[\s:\-—|]+\|$")
 BG_RE = re.compile(r"—\s*背景共识")
+RELATED_RE = re.compile(r"^related:\s*\[(.*?)\]\s*$", re.M)
 
 HARD, SOFT, INFO = "hard", "soft", "info"
 
@@ -197,6 +198,15 @@ def main():
                 inbound[tgt].add(rel)
             else:
                 broken.append("%s -> %s" % (rel, raw.strip()))
+    # frontmatter related: 是交叉引用的另一半，同样必须可解析（原为校验盲区）
+    for rel, path in pages.items():
+        m = RELATED_RE.search(frontmatter(path) or "")
+        if not m:
+            continue
+        for item in m.group(1).split(","):
+            item = item.strip().strip('"').strip("'")
+            if item and normalize(item) not in pages:
+                broken.append("%s (related:) -> %s" % (rel, item))
     for raw in LINK_RE.findall(index_txt):
         tgt = normalize(raw)
         if tgt in pages:
