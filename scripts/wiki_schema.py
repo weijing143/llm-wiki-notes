@@ -37,6 +37,39 @@ _MAP_ENTRY_RE = re.compile(r"^(\w[\w-]*)\s*:\s*([^\s\[][^\s]*)\s*$")
 _KEY_ONLY_RE = re.compile(r"^(\w[\w-]*)\s*:\s*(?:#.*)?$")
 _VERSION_RE = re.compile(r"^version:\s*(\S+)", re.M)
 
+LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
+
+
+def read(path):
+    return open(path, encoding="utf-8", errors="ignore").read()
+
+
+def frontmatter(path):
+    """取页面 frontmatter 原始文本；无则 None。"""
+    txt = read(path)
+    if not txt.startswith("---"):
+        return None
+    end = txt.find("\n---", 3)
+    return txt[3:end] if end != -1 else None
+
+
+def fm_value(fm, name):
+    """取 frontmatter 标量值；容忍引号包裹（evidence_level: "A" 也算合法）。"""
+    m = re.search(r"^%s:\s*(.+)$" % re.escape(name), fm or "", re.M)
+    if not m:
+        return None
+    return m.group(1).strip().strip('"').strip("'")
+
+
+def normalize(target):
+    """[[链接]] 归一化：去别名 |、去锚点 #、去 wiki/ 前缀与 .md 后缀。"""
+    t = target.split("|")[0].split("#")[0].strip()
+    if t.startswith("wiki/"):
+        t = t[len("wiki/"):]
+    if t.endswith(".md"):
+        t = t[:-3]
+    return t
+
 
 def _parse_list(raw):
     return [x.strip() for x in raw.split(",") if x.strip()]

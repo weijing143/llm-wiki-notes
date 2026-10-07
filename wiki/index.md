@@ -2,12 +2,14 @@
 title: LLM Wiki Index
 type: index
 created: 2026-07-23
-updated: 2026-10-02
+updated: 2026-10-07
 ---
 
 # LLM Wiki Index
 
 全部 wiki 页面的目录（当前 0 页）。入库触发方式与定级规则见库根 `WIKI.md`。
+
+> 本文件由 `scripts/wiki-index.py` 生成，请勿手改；入库后重新生成，CI 以 `--check` 校验。
 
 ## Overview
 
@@ -27,6 +29,18 @@ updated: 2026-10-02
 
 （暂无）
 
+### Products
+
+（暂无）
+
+### Technologies
+
+（暂无）
+
+### Events
+
+（暂无）
+
 ## Concepts
 
 ### Theories
@@ -37,19 +51,27 @@ updated: 2026-10-02
 
 （暂无）
 
-## Sources
-
-### Articles
+### Frameworks
 
 （暂无）
 
-### Papers
+### Metrics
+
+（暂无）
+
+### Principles
+
+（暂无）
+
+## Sources
+
+## 其他（analyses / comparisons / questions）
 
 （暂无）
 
 ## 未启用分类
 
-`analyses` / `comparisons` / `questions` / `sources/papers` 目录已建（.gitkeep 占位）、暂无页面；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时按需创建。
+`entities/people`、`entities/organizations`、`entities/products`、`entities/technologies`、`entities/events`、`concepts/theories`、`concepts/methods`、`concepts/frameworks`、`concepts/metrics`、`concepts/principles`、`analyses`、`comparisons`、`questions`、`collections`（暂无页面，按需创建）
 
 ---
-*手工维护，lint 校验一致性；入库时同步更新*
+*由 scripts/wiki-index.py 生成于 2026-10-07；入库后重跑本脚本更新*

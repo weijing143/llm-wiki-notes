@@ -20,6 +20,7 @@ import unittest
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LINT = os.path.join(REPO, "scripts", "wiki-lint.py")
 NEW = os.path.join(REPO, "scripts", "wiki-new.py")
+INDEX = os.path.join(REPO, "scripts", "wiki-index.py")
 TODAY = datetime.date.today().isoformat()
 
 WIKI_MD = """---
@@ -221,6 +222,72 @@ class TestGitDateBasis(Fixture):
         self.assertEqual(d["date_source"], "git 提交日期")
         self.assertEqual(d["checks"]["updated 漂移"]["violations"], [])
         self.assertEqual(code, 0, json.dumps(d["summary"], ensure_ascii=False))
+
+
+class TestIndexGenerator(Fixture):
+    def run_index(self, *a):
+        return subprocess.run([sys.executable, INDEX, "--root", self.root] + list(a),
+                              capture_output=True, text=True, encoding="utf-8",
+                              errors="replace")
+
+    def test_generate_then_check_roundtrip(self):
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n").replace(
+                   "title: T", "title: Alice"))
+        out = self.run_index()
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        idx = open(os.path.join(self.root, "wiki", "index.md"),
+                   encoding="utf-8").read()
+        self.assertIn("[[entities/people/p1|Alice]]", idx)
+        self.assertIn("请勿手改", idx)
+        self.assertEqual(self.run_index("--check").returncode, 0)
+        # 改了页没重新生成 → --check 必须报出来
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n").replace(
+                   "title: T", "title: Bob"))
+        self.assertEqual(self.run_index("--check").returncode, 1)
+
+    def test_empty_wiki_generates(self):
+        self.assertEqual(self.run_index().returncode, 0)
+        self.assertEqual(self.run_index("--check").returncode, 0)
+
+
+class TestSemiAutoChecks(Fixture):
+    def test_stale_page_flagged_soft(self):
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n").replace(TODAY, "2020-01-01"))
+        code, d = self.lint()
+        self.assertEqual(code, 0)   # 软告警不判死
+        v = d["checks"]["过时声明候选"]["violations"]
+        self.assertTrue(any("p1" in x for x in v))
+
+    def test_time_word_flagged(self):
+        old = (datetime.date.today() - datetime.timedelta(days=60)).isoformat()
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n",
+                    "这是最新的进展。").replace(TODAY, old))
+        code, d = self.lint()
+        v = d["checks"]["过时声明候选"]["violations"]
+        self.assertTrue(any("时效词" in x for x in v))
+
+    def test_mention_without_link_flagged(self):
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n").replace(
+                   "title: T", "title: Alpha"))
+        self.w("wiki/entities/people/p2.md",
+               page("entity", "entity_type: person\n",
+                    "Alpha 提出过 X。Alpha 又提出 Y。"))
+        code, d = self.lint()
+        v = d["checks"]["缺链缺页候选"]["violations"]
+        self.assertTrue(any("Alpha" in x and "未链到" in x for x in v))
+
+    def test_missing_page_candidate_flagged(self):
+        body = "「Transformer」是核心。「Transformer」改变了范式。「Transformer」仍在演化。"
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n", body))
+        code, d = self.lint()
+        v = d["checks"]["缺链缺页候选"]["violations"]
+        self.assertTrue(any("Transformer" in x and "建页候选" in x for x in v))
 
 
 class TestWikiNew(Fixture):

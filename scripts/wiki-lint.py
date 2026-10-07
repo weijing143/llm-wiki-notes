@@ -6,7 +6,7 @@
     python3 scripts/wiki-lint.py --strict          # 软告警也判死（退出码 1）
     python3 scripts/wiki-lint.py --json            # 机器可读输出（供自动化消费）
 
-检查十三类（括号内为严重级）：
+检查十五类（括号内为严重级）：
   1. 断链          [[路径]] 指向不存在的页（硬）
   2. 孤儿页        无任何入链，index.md 的链接也算入链（软）
   3. 缺 frontmatter（硬）
@@ -21,7 +21,11 @@
   11. 等级引用可溯 "X 级（出处：…）"等级字母合法、出处页存在；
                    半角格式 "X 级(出处:…)" 视为格式错误（硬）
   12. 逐条覆盖     collection 页核查表的主张行须带吻合度或等级引用（软，未全覆盖只告警）
-  13. 结构计数     文件数 / 磁盘占用 / 各分类页数（信息，不参与判死）
+  13. 缺链缺页候选 某页标题在他页出现 ≥2 次却未加 [[]] 链接；「引号词」全库出现 ≥3 次
+                   却无对应页（软，半自动化的"缺失交叉引用 / 缺失页面"候选）
+  14. 过时声明候选 内容页 updated 距今 > --stale-days（默认 90），或 > 30 天且含
+                   "最新/目前/今年"等时效词（软，半自动化的"过时声明"候选）
+  15. 结构计数     文件数 / 磁盘占用 / 各分类页数（信息，不参与判死）
 
 退出码：0 全绿或仅软告警；1 存在硬告警（--strict 时软告警也算）；2 库根不存在。
 schema 允许值从 WIKI.md 的 yaml 块解析（单源），解析失败回退内置默认值并告警。
@@ -44,9 +48,9 @@ except (AttributeError, ValueError):
     pass
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from wiki_schema import load_schema
+from wiki_schema import (LINK_RE, fm_value, frontmatter, load_schema,
+                         normalize, read)
 
-LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 EMOJI_RE = re.compile("🟢|🟡|🔴")
 GRADE_REF_RE = re.compile(r"([A-Z])\s*级（出处：([^）]+)）")
 GRADE_REF_HALF_RE = re.compile(r"([A-Z])\s*级\(出处\s*[:：]\s*([^)]+)\)")
@@ -66,36 +70,6 @@ def collect_pages(wiki_dir):
                 rel = rel.replace(os.sep, "/")[:-3]   # 统一正斜杠，键与 [[链接]] 一致
                 pages[rel] = os.path.join(dirpath, f)
     return pages
-
-
-def read(path):
-    return open(path, encoding="utf-8", errors="ignore").read()
-
-
-def frontmatter(path):
-    txt = read(path)
-    if not txt.startswith("---"):
-        return None
-    end = txt.find("\n---", 3)
-    return txt[3:end] if end != -1 else None
-
-
-def fm_value(fm, name):
-    """取 frontmatter 标量值；容忍引号包裹（evidence_level: "A" 也算合法）。"""
-    m = re.search(r"^%s:\s*(.+)$" % re.escape(name), fm or "", re.M)
-    if not m:
-        return None
-    return m.group(1).strip().strip('"').strip("'")
-
-
-def normalize(target):
-    """[[链接]] 归一化：去别名 |、去锚点 #、去 wiki/ 前缀与 .md 后缀。"""
-    t = target.split("|")[0].split("#")[0].strip()
-    if t.startswith("wiki/"):
-        t = t[len("wiki/"):]
-    if t.endswith(".md"):
-        t = t[:-3]
-    return t
 
 
 def mtime_day(path):
@@ -141,6 +115,8 @@ def main():
                     help="软告警也判死（退出码 1），供 CI 使用")
     ap.add_argument("--json", action="store_true",
                     help="输出 JSON（供自动化消费），不打印人类可读段落")
+    ap.add_argument("--stale-days", type=int, default=90,
+                    help="过时声明候选的天数阈值（默认 90）")
     args = ap.parse_args()
 
     default_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -356,7 +332,54 @@ def main():
                                 "；".join(uncovered[:3])))
     rec("逐条覆盖", SOFT, cover_bad, cover_bad or ["全覆盖"])
 
-    # 13. 结构计数（信息；排除 .git）
+    # 13. 缺链缺页候选（软；只列候选，判读靠人工——manual 项"缺失页面"的半自动化）
+    QUOTE_RE = re.compile("「([^」\n]{2,20})」")
+    titles = {}
+    for rel, path in pages.items():
+        t = fm_value(frontmatter(path), "title")
+        if t and len(t) >= 2:
+            titles[rel] = t
+    link_targets = {rel: {normalize(x) for x in LINK_RE.findall(read(path))}
+                    for rel, path in pages.items()}
+    mention_bad, quoted = [], collections.Counter()
+    for rel, path in sorted(pages.items()):
+        txt = read(path)
+        for other, t in titles.items():
+            if other == rel:
+                continue
+            n = txt.count(t)
+            if n >= 2 and other not in link_targets[rel]:
+                mention_bad.append("%s 提及「%s」%d 次但未链到 %s"
+                                   % (rel, t, n, other))
+        for q in QUOTE_RE.findall(txt):
+            quoted[q] += 1
+    known_titles = set(titles.values())
+    miss_page = ["「%s」全库出现 %d 次但无对应页（建页候选）" % (q, c)
+                 for q, c in quoted.most_common() if c >= 3 and q not in known_titles]
+    rec("缺链缺页候选", SOFT, mention_bad + miss_page,
+        (mention_bad + miss_page) or ["无"])
+
+    # 14. 过时声明候选（软；manual 项"过时声明"的半自动化）
+    TIME_WORD_RE = re.compile("最新|目前|当前|今年|截至目前|近来|recently", re.I)
+    today = datetime.date.today()
+    stale_bad = []
+    for rel, path in sorted(pages.items()):
+        ty = types.get(rel)
+        if ty in (None, "index", "overview"):
+            continue
+        m = re.search(r"^updated:\s*[\"']?(\d{4}-\d{2}-\d{2})",
+                      frontmatter(path) or "", re.M)
+        if not m:
+            continue
+        age = (today - datetime.date.fromisoformat(m.group(1))).days
+        if age > args.stale_days:
+            stale_bad.append("%s: updated 距今 %d 天（阈值 %d）"
+                             % (rel, age, args.stale_days))
+        elif age > 30 and TIME_WORD_RE.search(read(path)):
+            stale_bad.append("%s: updated 距今 %d 天且含时效词，需复核" % (rel, age))
+    rec("过时声明候选", SOFT, stale_bad, stale_bad or ["无"])
+
+    # 15. 结构计数（信息；排除 .git）
     files_all = []
     for d, subdirs, fs in os.walk(root):
         subdirs[:] = [x for x in subdirs if x != ".git"]

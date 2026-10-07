@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-10-07 · index 自动化 + manual 检查半自动化（WIKI.md v3.5）
+
+- 新增 `scripts/wiki-index.py`：扫描全部页面 frontmatter 按分类重建 `wiki/index.md`（保留 created、分类结构跟随 schema 目录映射）；**index.md 转为脚本生成、禁止手改**，入库四件套的"登记"改为重跑该脚本；`--check` 接入 CI（手改或入库后未重建即红）
+- `wiki-lint.py` 13 → **15 项**，manual 检查的半自动化（只列候选、判读仍靠人工）：
+  - 第 13 项「缺链缺页候选」：某页标题在他页出现 ≥2 次却未加 `[[]]` 链接；「引号词」全库出现 ≥3 次却无对应页
+  - 第 14 项「过时声明候选」：内容页 `updated` 距今 > 90 天（`--stale-days` 可调），或 > 30 天且含"最新/目前/今年"等时效词
+- 共享工具函数（frontmatter / fm_value / normalize / LINK_RE）下沉至 `scripts/wiki_schema.py`，lint 与 wiki-index 复用
+- manual 检查项收敛为两项（跨页矛盾、数据缺口），WIKI.md 记录 semi_auto 映射
+- 自测 18 → 24 用例；本仓库 `wiki/index.md` 已切换为生成版
+
 ## 2026-10-07 · agent 发现入口
 
 - 新增 `AGENTS.md`：指向 WIKI.md 为唯一规则源 + 三条核心命令 + 入库规则摘要 + 硬边界；agent clone 后可自助上岗，无需用户口头交代规则

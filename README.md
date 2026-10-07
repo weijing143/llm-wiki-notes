@@ -29,8 +29,9 @@ WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 
 LICENSE                        # wiki/ 内容 CC BY 4.0（scripts/ 代码为 MIT，见 scripts/LICENSE）
 CHANGELOG.md                   # 内容变更史
 log.md                         # 操作留痕：只保留格式与机制
-scripts/wiki-lint.py           # 结构自检：13 项检查，退出码分级，--strict / --json
+scripts/wiki-lint.py           # 结构自检：15 项检查，退出码分级，--strict / --json / --stale-days
 scripts/wiki-new.py            # 建页脚手架：按 schema 落目录、自动填 frontmatter
+scripts/wiki-index.py          # index.md 生成器：扫描 frontmatter 重建目录（--check 供 CI）
 scripts/wiki_schema.py         # 从 WIKI.md 解析 schema 的共用模块（单源）
 templates/                     # 页面模板：collection / entity / concept / source / generic
 tests/test_wiki.py             # 脚本回归自测（unittest + 临时 fixture）
@@ -43,7 +44,7 @@ raw/                           # 源文档层（只写不改，作溯源头）
   assets/                       图片 / 附件（空槽备用）
   data/                         独立数据集文件（空槽备用）
 wiki/                          # 知识库层
-  index.md                      全部页面目录
+  index.md                      全部页面目录（wiki-index.py 生成，禁手改）
   collections/                  专题页：核查表所在
   entities/                     实体页：人 / 组织
   concepts/                     概念页：理论 / 方法
@@ -59,20 +60,21 @@ python3 scripts/wiki-new.py collection <slug> --title 专题名         # 专题
 python3 scripts/wiki-new.py source <slug> --evidence-level C        # 来源页
 ```
 
-按 `WIKI.md` 的目录映射落到正确位置，自动填好 `created` / `updated` / `type` / 子类型，拒绝覆盖已有页。建页后按入库四件套收尾：`raw/` 快照 → `index.md` 登记 → `log.md` 留痕 → lint 复跑。
+按 `WIKI.md` 的目录映射落到正确位置，自动填好 `created` / `updated` / `type` / 子类型，拒绝覆盖已有页。建页后按入库四件套收尾：`raw/` 快照 → `wiki-index.py` 登记 → `log.md` 留痕 → lint 复跑。
 
 ## 自检
 
 ```bash
-python3 scripts/wiki-lint.py            # 13 项检查，硬告警时退出码 1
+python3 scripts/wiki-index.py           # 重建 index.md（--check 只校验，供 CI）
+python3 scripts/wiki-lint.py            # 15 项检查，硬告警时退出码 1
 python3 scripts/wiki-lint.py --strict   # 软告警也判死（CI 用）
 python3 scripts/wiki-lint.py --json     # 机器可读输出（自动化用）
 python3 -m unittest discover -s tests   # 脚本自身的回归自测
 ```
 
-十三类检查：断链、孤儿页、缺 frontmatter、`updated` 与最后变更日期漂移（以 git 提交日期为基准，无 git 历史降级 mtime）、index 重复区块、`log.md` 漏记、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、type 完整性、子类型一致性、转述级警示、等级引用可溯（半角格式会报错）、逐条覆盖、结构计数。
+十五类检查：断链、孤儿页、缺 frontmatter、`updated` 与最后变更日期漂移（以 git 提交日期为基准，无 git 历史降级 mtime）、index 重复区块、`log.md` 漏记、定级完整性（含"带 🟢🟡🔴 的表必须自带图例"）、type 完整性、子类型一致性、转述级警示、等级引用可溯（半角格式会报错）、逐条覆盖、缺链缺页候选（提及未加链 /「引号词」无对应页）、过时声明候选（updated 超阈值或含时效词，`--stale-days` 调阈值）、结构计数。
 
-检查分三级：**硬**（断链 / 缺 frontmatter / 定级 / 类型 / 子类型 / 警示 / 引用可溯，存在即退出码 1）、**软**（孤儿 / 漂移 / 重复 / 漏记 / 覆盖，默认只告警）、**信息**（结构计数）。允许值与目录映射从 `WIKI.md` 的 yaml 块解析（单源），改 schema 不用改脚本。纯标准库、只读。
+检查分三级：**硬**（断链 / 缺 frontmatter / 定级 / 类型 / 子类型 / 警示 / 引用可溯，存在即退出码 1）、**软**（孤儿 / 漂移 / 重复 / 漏记 / 覆盖 / 两类候选清单，默认只告警）、**信息**（结构计数）。允许值与目录映射从 `WIKI.md` 的 yaml 块解析（单源），改 schema 不用改脚本。纯标准库、只读。
 
 ## 已知边界
 

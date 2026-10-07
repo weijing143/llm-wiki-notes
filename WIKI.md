@@ -2,7 +2,7 @@
 project: llm-wiki-notes
 domain: general
 created: 2026-07-23
-version: 3.4
+version: 3.5
 updated: 2026-10-07
 ---
 
@@ -14,7 +14,7 @@ updated: 2026-10-07
 
 - **Name**: LLM Wiki Notes ｜ **Domain**: general
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
-- **Created**: 2026-07-23 ｜ **配置版本**: 3.4
+- **Created**: 2026-07-23 ｜ **配置版本**: 3.5
 
 ## 三层结构
 
@@ -117,7 +117,7 @@ ingest:
   artifacts:                      # 四件套 + 提交
     - raw/<分类>/<主题>-<日期>.md         # 原始快照；数字标抓取日期
     - wiki/collections/<主题>-<年>.md     # 或向现有页追加
-    - wiki/index.md                      # 登记
+    - wiki/index.md                      # 登记 = 重跑 scripts/wiki-index.py（禁手改）
     - log.md                             # 操作留痕
     - git commit                          # 收尾提交
   page_decision: 同主题续条 → 追加现有页；同域不同主题 → 新建独立页
@@ -132,23 +132,39 @@ ingest:
 lint:
   trigger: manual + CI            # 本地手动执行；push / PR 时 GitHub Actions 跑 --strict
   cadence: 按需 / 结构变动后        # 例：批量归档后、重建后
-  automated:                      # 共 13 项，见脚本 docstring
+  automated:                      # 共 15 项，见脚本 docstring
     [断链, 孤儿页, 缺 frontmatter, updated 与变更日期漂移, index 重复区块,
      log.md 漏记, 定级完整性, type 完整性, 子类型一致性, 转述级警示, 等级引用可溯,
-     逐条覆盖, 结构计数]
+     逐条覆盖, 缺链缺页候选, 过时声明候选, 结构计数]
   severity:                       # v3.4 起分级，决定退出码
     hard: [断链, 缺 frontmatter, 定级完整性, type 完整性, 子类型一致性,
            转述级警示, 等级引用可溯]        # 存在即退出码 1
-    soft: [孤儿页, updated 漂移, index 重复区块, log.md 漏记, 逐条覆盖]
-                                        # 默认不影响退出码；--strict 下也判死
+    soft: [孤儿页, updated 漂移, index 重复区块, log.md 漏记, 逐条覆盖,
+           缺链缺页候选, 过时声明候选]      # 默认不影响退出码；--strict 下也判死
     info: [结构计数]                      # 不参与判死
   exit_codes: {0: 全绿或仅软告警, 1: 硬告警（--strict 含软告警）, 2: 库根不存在}
   date_basis: git 提交日期（clone/checkout 会重置 mtime）；无 git 历史时降级 mtime 并在输出中标注
-  flags: [--strict, --json]       # --json 供自动化消费（含各项 violations 与退出码）
+  flags: [--strict, --json, --stale-days]   # --json 供自动化消费；--stale-days 调过时阈值（默认 90）
   schema_source: 允许值 / 目录映射解析自本文件 yaml 块（单源）
+  semi_auto:                      # v3.5 起：manual 项的半自动化（只列候选，判读仍靠人工）
+    缺失页面: lint 第 13 项（「引号词」全库 ≥3 次无对应页；标题被提及 ≥2 次未加链）
+    过时声明: lint 第 14 项（updated 超阈值；>30 天且含时效词）
   self_test: python3 -m unittest discover -s tests -v   # 脚本回归自测
-  manual: [跨页矛盾, 过时声明, 缺失页面, 数据缺口]
+  manual: [跨页矛盾, 数据缺口]
   on_fix: 修完复跑脚本确认全绿
+```
+
+## index.md 生成（wiki-index）
+
+```yaml
+index_generator:
+  script: scripts/wiki-index.py
+  rule: wiki/index.md 由脚本生成，禁止手改        # 入库四件套的"登记" = 重跑本脚本
+  behavior:
+    - 扫描全部页面 frontmatter（type / title / updated），按分类重建目录
+    - 保留 index 页 created，updated 置为生成日
+    - 分类结构跟随本文件目录映射，新增子目录类型无需改脚本
+  ci: python3 scripts/wiki-index.py --check       # 手改或入库后未重建 → 退出码 1
 ```
 
 ## 建页脚手架（wiki-new）
@@ -177,4 +193,4 @@ output:
 ```
 
 ---
-*配置版本 3.4 ｜ 空模板版*
+*配置版本 3.5 ｜ 空模板版*

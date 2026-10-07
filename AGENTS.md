@@ -10,7 +10,8 @@
 
 ```bash
 python3 scripts/wiki-new.py <type> <slug> [选项]   # 建页：自动落目录、填 frontmatter、拒绝覆盖
-python3 scripts/wiki-lint.py                        # 自检：13 项；退出码 0 全绿 / 1 硬告警 / 2 库根不存在
+python3 scripts/wiki-index.py                       # 重建 wiki/index.md（入库后必跑；禁手改）
+python3 scripts/wiki-lint.py                        # 自检：15 项；退出码 0 全绿 / 1 硬告警 / 2 库根不存在
 python3 scripts/wiki-lint.py --json                 # 机器可读输出（自动化判断用 --json，不要解析文本）
 python3 -m unittest discover -s tests               # 改脚本后必跑的回归自测
 ```
@@ -20,11 +21,12 @@ python3 -m unittest discover -s tests               # 改脚本后必跑的回�
 - **仅用户明确指令触发**（`user_only`）；不主动提议入库、不追问
 - 允许：外部链接 / 文件 / 论文 / 视频，用户显式点名的素材
 - 禁止：日常对话、会话内容、查询问答结果——**query 只答，不写回 wiki**
-- 四件套 + 提交：`raw/` 快照（数字标抓取日期）→ wiki 页（新建或追加）→ `wiki/index.md` 登记 → `log.md` 留痕 → lint 全绿后 `git commit`
+- 四件套 + 提交：`raw/` 快照（数字标抓取日期）→ wiki 页（新建或追加）→ 重跑 `wiki-index.py` 登记 → `log.md` 留痕 → lint 全绿后 `git commit`
 
 ## 硬边界
 
 - `raw/` 不可变：只写不改，它是溯源头
+- `wiki/index.md` 由脚本生成：不手改，改了 CI 的 `--check` 会红
 - 定级双轴不混写：来源等级 `A/B/C/D` × 吻合度 `🟢/🟡/🔴`；改判定先核实再改标签，核不实标 C/D，不猜不折中
 - 数字 / 版本号必须本次实时抓取并标日期，不凭记忆代填
 - lint 硬告警（断链 / 缺 frontmatter / 定级 / 类型 / 子类型 / 转述警示 / 引用可溯）未清零前不提交
