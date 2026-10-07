@@ -27,7 +27,7 @@ related: [entities/organizations/zhipu, entities/organizations/aws]
 | 2 | AWS 将基于模型调用量与智谱进行收入分成，区别于一次性授权（智谱向记者确认） | 🟢 | C | [[sources/articles/cnstock-bedrock-glm53]] |
 | 3 | 日报视频标题“智谱宣布与亚马逊达成合作，部署GLM模型按调用量分成”——官宣主体实为 AWS / Bedrock，接入对象为 GLM-5.3 而非笼统“GLM 模型” | 🟡 | C | [[sources/articles/ai-daily-540]] |
 | 4 | 智谱 2026-09-16 分析师电话会披露：已与多家海内外头部云服务商签署收入分成协议，相关收入 2026 年 10 月起确认 | 🟢 | C | [[sources/articles/thepaper-bedrock-glm53]] |
-| 5 | 智谱全业务口径 ARR 达 18 亿美元；年末 ARR 目标由 24 亿上调至 30 亿美元（2026-09-16 披露） | 🟢 | C | [[sources/articles/thepaper-bedrock-glm53]] |
+| 5 | 智谱全业务口径 ARR 达 18 亿美元；年末 ARR 目标由 24 亿上调至 30 亿美元（2026-09-16 披露） | 🟡 | C | [[sources/articles/cnstock-bedrock-glm53]] |
 | 6 | 国内：阿里云百炼已签署类似分成协议；华为云已上架 GLM-5.3 并就同类分成合作达成意向 | 🟢 | C | [[sources/articles/cnstock-bedrock-glm53]] |
 | 7 | 2026-09-30 Baseten 宣布企业用户可在 OpenAI Codex 中调用 Kimi K3 与 GLM-5.3，费用计入企业已有 OpenAI 采购承诺额度 | 🟢 | C | [[sources/articles/thepaper-bedrock-glm53]] |
 | 8 | 2026-10-06 智谱（02513.HK）收盘 715.5 港元，涨 7.59%，成交 25.05 亿港元 | 🟢 | C | [[sources/articles/thepaper-bedrock-glm53]] |
@@ -52,3 +52,4 @@ related: [entities/organizations/zhipu, entities/organizations/aws]
 ## 归档记录
 
 - 2026-10-07 创建（[[index]]）：线索来自 B 站 AI 日报第 540 期（BV1a9pF61EBc），原始快照 `raw/notes/ai-daily-540-2026-10-07.md`，溯源检索快照 `raw/notes/zhipu-aws-bedrock-verify-2026-10-07.md`。
+- 2026-10-07 勘误：核查表第 5 条出处由 `sources/articles/thepaper-bedrock-glm53` 更正为 `sources/articles/cnstock-bedrock-glm53`——澎湃原文只有“年末 ARR 指引 24 亿→30 亿美元”，无 18 亿美元口径（审计时直抓原文复核）；该条吻合度由 🟢 降为 🟡，18 亿美元待复核后回填。出处以本表为准。
