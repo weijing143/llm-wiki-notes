@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-10-07 · 命名约定 + question 页工作流（WIKI.md v3.6）
+
+首次真实入库（智谱×AWS 专题，commit 0e6090c2）暴露问题的复盘固化：
+
+- **命名与引用约定**（新章节）：页标题用带括号完整名（`智谱（Zhipu）`），正文用简称；`wiki/` 正文禁用「」（留给 lint 第 13 项当缺页候选探测器）；他页实体首次提及加 `[[]]` 链
+- **question 页工作流**：query 默认只答不写回的例外——用户点名"这个答案入库"时可沉淀为 `questions/` 页（type: question）
+- **跟踪点回看机制**：后续跟踪点写成含时效词的表述（如"目前未定位官方公告"），>30 天后 lint 第 14 项自动带入复核清单
+- 首次入库内容：collections/zhipu-aws-bedrock-2026（C）+ sources×3 + entities×2 + raw 快照×2
+
 ## 2026-10-07 · index 自动化 + manual 检查半自动化（WIKI.md v3.5）
 
 - 新增 `scripts/wiki-index.py`：扫描全部页面 frontmatter 按分类重建 `wiki/index.md`（保留 created、分类结构跟随 schema 目录映射）；**index.md 转为脚本生成、禁止手改**，入库四件套的"登记"改为重跑该脚本；`--check` 接入 CI（手改或入库后未重建即红）

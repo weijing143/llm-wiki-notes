@@ -2,19 +2,19 @@
 project: llm-wiki-notes
 domain: general
 created: 2026-07-23
-version: 3.5
+version: 3.6
 updated: 2026-10-07
 ---
 
 # Wiki Configuration
 
-> 本仓库是 **LLM Wiki 模式**的可复用空模板：只含框架（规则 + 目录骨架 + 自检脚本），尚未入库任何内容。外部内容先原样存档到 `raw/`（不可变），再经核查沉淀为 `wiki/` 结构化知识页。
+> 本仓库是 **LLM Wiki 模式**的知识笔记库：外部内容先原样存档到 `raw/`（不可变），再经核查沉淀为 `wiki/` 结构化知识页。框架本身（规则 + 目录骨架 + 自检脚本）亦可复用为空模板。
 
 ## Project Info
 
 - **Name**: LLM Wiki Notes ｜ **Domain**: general
 - **Description**: 外部内容经核查后沉淀的结构化知识页（LLM Wiki 模式）
-- **Created**: 2026-07-23 ｜ **配置版本**: 3.5
+- **Created**: 2026-07-23 ｜ **配置版本**: 3.6
 
 ## 三层结构
 
@@ -22,7 +22,7 @@ updated: 2026-10-07
 |---|---|---|
 | 源文档 | `raw/`（notes · articles · transcripts · papers · assets · data） | 不可变、只写不改；数字标抓取日期，作溯源头 |
 | 知识库 | `wiki/`（index · overview · collections · entities · concepts · sources） | 由人工 + agent 协作维护；交叉引用用 `[[页面路径]]` |
-| 配置 / 日志 | `WIKI.md`（本文件）· `log.md` | 规则与约定（定级 / 入库 / lint）；`log.md` 记录操作留痕（当前为空模板，暂无条目） |
+| 配置 / 日志 | `WIKI.md`（本文件）· `log.md` | 规则与约定（定级 / 命名 / 入库 / lint）；`log.md` 记录操作留痕 |
 
 **分类目录按需创建**：现有 `entities/people`、`entities/organizations`、`concepts/theories`、`concepts/methods`、`sources/articles`、`collections`，以及备用空槽 `analyses`、`comparisons`、`questions`、`sources/papers`（均 .gitkeep 占位）；`entities/products|technologies|places`、`concepts/frameworks` 未建目录，需要时 `mkdir` 即可。
 
@@ -107,6 +107,15 @@ concepts:
 - `source` 页等级空白会波及全部下游页 → 优先修
 - 自动校验：`scripts/wiki-lint.py` 第 7 / 10 / 11 / 12 项，运行 `python3 scripts/wiki-lint.py`
 
+## 命名与引用约定
+
+lint 第 13 项（缺链缺页候选）按两条规则告警：**页标题在他页出现 ≥2 次未加 `[[]]` 链**、**「引号词」全库出现 ≥3 次却无对应页**；CI 跑 `--strict` 时软告警也判死。为从源头规避（2026-10-07 首次入库实证）：
+
+- **页标题用带括号的完整名**：实体页如 `智谱（Zhipu）`、`亚马逊云科技（AWS）`；专题页带限定词与年份。正文行文用简称（智谱、AWS），不会与标题字面命中
+- **`wiki/` 页正文禁用「」直角引号**：一律改用“”弯引号。「」留给 lint 当"缺页候选词"探测器，正文用了会污染候选清单
+- **他页实体 / 专题首次提及加 `[[]]` 链接**：既是交叉引用，也直接消除"提及未加链"告警
+- `raw/` 不受此限（lint 只扫 `wiki/`）
+
 ## 入库规则（Ingest）
 
 ```yaml
@@ -114,6 +123,8 @@ ingest:
   trigger: user_only              # 仅用户明确指令；不主动提议、不追问
   allow_sources: [外部来源（链接 / 文件 / 论文 / 视频）, 用户显式点名的素材]
   deny_sources:  [日常对话, 会话内容, 查询问答结果]      # query 只答，不写回 wiki
+  question_pages: 例外——用户点名"这个答案入库"时，query 产物可沉淀为 questions/ 页
+                  （type: question）；未被点名的 query 仍只答不写回
   artifacts:                      # 四件套 + 提交
     - raw/<分类>/<主题>-<日期>.md         # 原始快照；数字标抓取日期
     - wiki/collections/<主题>-<年>.md     # 或向现有页追加
@@ -149,6 +160,8 @@ lint:
   semi_auto:                      # v3.5 起：manual 项的半自动化（只列候选，判读仍靠人工）
     缺失页面: lint 第 13 项（「引号词」全库 ≥3 次无对应页；标题被提及 ≥2 次未加链）
     过时声明: lint 第 14 项（updated 超阈值；>30 天且含时效词）
+    跟踪点回看: 专题页"后续跟踪点"的待办写成含时效词的表述（如"目前未定位官方公告"），
+               >30 天后 lint 第 14 项自动把该页带入复核清单——无需额外提醒机制
   self_test: python3 -m unittest discover -s tests -v   # 脚本回归自测
   manual: [跨页矛盾, 数据缺口]
   on_fix: 修完复跑脚本确认全绿
@@ -193,4 +206,4 @@ output:
 ```
 
 ---
-*配置版本 3.5 ｜ 空模板版*
+*配置版本 3.6*
