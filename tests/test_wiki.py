@@ -236,8 +236,9 @@ class TestIndexGenerator(Fixture):
                    "title: T", "title: Alice"))
         out = self.run_index()
         self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
-        idx = open(os.path.join(self.root, "wiki", "index.md"),
-                   encoding="utf-8").read()
+        with open(os.path.join(self.root, "wiki", "index.md"),
+                  encoding="utf-8") as f:
+            idx = f.read()
         self.assertIn("[[entities/people/p1|Alice]]", idx)
         self.assertIn("请勿手改", idx)
         self.assertEqual(self.run_index("--check").returncode, 0)
@@ -312,6 +313,143 @@ class TestWikiNew(Fixture):
         self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
         self.assertTrue(os.path.isfile(
             os.path.join(self.root, "wiki", "concepts", "methods", "m1.md")))
+
+
+class TestIndexDeterminism(Fixture):
+    """回归：生成物曾写入运行日，--check 在非重建当天系统性误报。"""
+
+    def load_module(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("wiki_index", INDEX)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_output_only_depends_on_page_content(self):
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n").replace(
+                   "title: T", "title: Alice"))
+        out = subprocess.run([sys.executable, INDEX, "--root", self.root],
+                             capture_output=True, text=True)
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        mod = self.load_module()
+        schema, _ = mod.load_schema(self.root)
+        metas = mod.collect(schema, os.path.join(self.root, "wiki"))
+        idx = os.path.join(self.root, "wiki", "index.md")
+        created = mod.fm_value(mod.frontmatter(idx), "created")
+        # build 不接受“今天”：输出只能由页面内容决定，换一天运行结果不变
+        built = mod.build(schema, metas, created)
+        with open(idx, encoding="utf-8") as f:
+            self.assertEqual(built, f.read())
+        self.assertNotIn("生成于", built)          # 运行日不再进入生成物
+        self.assertIn("updated: " + TODAY, built)   # updated 取页内最新
+
+
+class TestLegendScope(Fixture):
+    """图例检查只作用于表格块：正文引用 🟢🟡🔴 不是“缺图例的表”。"""
+
+    def test_table_without_legend_fails(self):
+        body = "| # | 主张 | 吻合度 |\n|---|---|---|\n| 1 | x | 🟢 |\n"
+        self.w("wiki/collections/c1.md",
+               page("collection", "evidence_level: A\n", body))
+        code, d = self.lint()
+        self.assertEqual(code, 1)
+        self.assertIn("定级完整性", d["summary"]["hard_failures"])
+        self.assertTrue(any("缺图例" in x
+                            for x in d["checks"]["定级完整性"]["violations"]))
+
+    def test_legend_line_before_table_passes(self):
+        body = ("> 图例：🟢 吻合 · 🟡 偏差 · 🔴 放大\n\n"
+                "| # | 主张 | 吻合度 |\n|---|---|---|\n| 1 | x | 🟢 |\n")
+        self.w("wiki/collections/c1.md",
+               page("collection", "evidence_level: A\n", body))
+        code, d = self.lint()
+        self.assertEqual(d["checks"]["定级完整性"]["violations"], [])
+
+    def test_prose_emoji_without_table_not_flagged(self):
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n",
+                    "本条判定 🟢 与来源吻合，另一条 🟡。"))
+        code, d = self.lint()
+        self.assertEqual(code, 0, json.dumps(d["checks"], ensure_ascii=False))
+        self.assertEqual(d["checks"]["定级完整性"]["violations"], [])
+
+
+class TestRelatedLinks(Fixture):
+    """related: 是正文 [[…]] 之外的交叉引用，须同样可解析（原为校验盲区）。"""
+
+    def test_dangling_related_fails(self):
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\nrelated: [entities/people/nope]\n"))
+        code, d = self.lint()
+        self.assertEqual(code, 1)
+        self.assertIn("断链", d["summary"]["hard_failures"])
+        self.assertTrue(any("related:" in x
+                            for x in d["checks"]["断链"]["violations"]))
+
+    def test_existing_related_passes(self):
+        self.w("wiki/entities/people/p1.md", page("entity", "entity_type: person\n"))
+        self.w("wiki/entities/people/p2.md",
+               page("entity", "entity_type: person\nrelated: [entities/people/p1.md]\n"))
+        code, d = self.lint()
+        self.assertEqual(d["checks"]["断链"]["violations"], [])
+
+
+class TestOrphanScope(Fixture):
+    """index.md 由脚本生成、必然收录全部页，其链接不能算孤儿检查的入链。"""
+
+    def test_index_only_link_is_not_orphan(self):
+        self.w("wiki/entities/people/p1.md", page("entity", "entity_type: person\n"))
+        self.w("wiki/index.md", INDEX_MD + "\n[[entities/people/p1]]\n")
+        code, d = self.lint("--strict")
+        self.assertEqual(code, 0, json.dumps(d["summary"], ensure_ascii=False))
+        self.assertEqual(d["checks"]["孤儿页"]["violations"], [])
+        out = subprocess.run([sys.executable, LINT, self.root],
+                             capture_output=True, text=True, encoding="utf-8")
+        self.assertIn("仅被 index 收录", out.stdout)
+
+    def test_page_without_any_inbound_is_still_orphan(self):
+        self.w("wiki/entities/people/p1.md", page("entity", "entity_type: person\n"))
+        code, d = self.lint("--strict")
+        self.assertEqual(code, 1)
+        self.assertIn("孤儿页", d["summary"]["soft_warnings"])
+
+
+@unittest.skipUnless(shutil.which("git"), "需要 git")
+class TestRawImmutable(Fixture):
+    """raw/ 不可变此前只靠约定：改 raw 快照 lint 照样全绿。"""
+
+    def git(self, *argv):
+        return subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t"] + list(argv),
+            cwd=self.root, check=True, capture_output=True, text=True)
+
+    def test_modified_raw_flagged(self):
+        self.w("raw/notes/n-2026-01-01.md", "只写不改\n")
+        self.git("init", "-q")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "init")
+        self.w("raw/notes/n-2026-01-01.md", "只写不改\n被改了\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "edit raw")
+        code, d = self.lint()
+        self.assertEqual(code, 0)   # 软告警：本地默认不判死
+        self.assertTrue(any("raw/notes/n-2026-01-01.md" in x
+                            for x in d["checks"]["raw 不可变"]["violations"]))
+        code, d = self.lint("--strict")
+        self.assertEqual(code, 1)   # CI 跑 --strict，照样拦下
+        self.assertIn("raw 不可变", d["summary"]["soft_warnings"])
+
+    def test_append_only_raw_passes(self):
+        self.w("raw/notes/n-2026-01-01.md", "一号\n")
+        self.git("init", "-q")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "init")
+        self.w("raw/notes/m-2026-01-02.md", "二号\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "add raw")
+        code, d = self.lint()
+        self.assertEqual(d["checks"]["raw 不可变"]["violations"], [])
 
 
 if __name__ == "__main__":
