@@ -6,7 +6,7 @@
     python3 scripts/wiki-lint.py --strict          # 软告警也判死（退出码 1）
     python3 scripts/wiki-lint.py --json            # 机器可读输出（供自动化消费）
 
-检查十五类（括号内为严重级）：
+检查十六类（括号内为严重级）：
   1. 断链          正文 [[路径]] 与 frontmatter related: 指向不存在的页（硬）
   2. 孤儿页        正文无入链且未被 index 收录（软）；仅被 index 收录的另列候选，
                    因为 index.md 由脚本生成、必然收录全部页面，算作入链会让本项永不触发
@@ -27,7 +27,9 @@
                    却无对应页（软，半自动化的"缺失交叉引用 / 缺失页面"候选）
   14. 过时声明候选 内容页 updated 距今 > --stale-days（默认 90），或 > 30 天且含
                    "最新/目前/今年"等时效词（软，半自动化的"过时声明"候选）
-  15. 结构计数     文件数 / 磁盘占用 / 各分类页数（信息，不参与判死）
+  15. raw 不可变    git 历史中 raw/ 只允许新增；当前树中仍存在的文件被修改 /
+                   删除 / 重命名即告警（软；无 git 时跳过——原仅靠约定）
+  16. 结构计数     文件数 / 磁盘占用 / 各分类页数（信息，不参与判死）
 
 退出码：0 全绿或仅软告警；1 存在硬告警（--strict 时软告警也算）；2 库根不存在。
 schema 允许值从 WIKI.md 的 yaml 块解析（单源），解析失败回退内置默认值并告警。
@@ -430,7 +432,37 @@ def main():
             stale_bad.append("%s: updated 距今 %d 天且含时效词，需复核" % (rel, age))
     rec("过时声明候选", SOFT, stale_bad, stale_bad or ["无"])
 
-    # 15. 结构计数（信息；排除 .git）
+    # 15. raw/ 不可变（软；无 git 跳过。规范硬边界此前无任何机器兜底）
+    raw_bad, raw_note = [], []
+    try:
+        out = subprocess.run(
+            ["git", "-C", root, "log", "--format=@%cs", "--name-status", "--", "raw"],
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=60)
+        if out.returncode != 0:
+            raw_note = ["跳过：非 git 仓库（raw 不可变仅靠约定）"]
+        else:
+            raw_note = ["无（raw 仅有新增记录）"]
+            cur = None
+            for line in out.stdout.splitlines():
+                if line.startswith("@"):
+                    cur = line[1:]
+                elif line.strip():
+                    status, _, path = line.partition("\t")
+                    path = path.strip()
+                    # 已从工作区移除的文件（如样本期清理）不追究，只看当前树
+                    if (not path or status[:1] not in ("M", "D", "R")
+                            or not os.path.exists(os.path.join(root, path))):
+                        continue
+                    raw_bad.append("%s 于 %s 被%s（raw 只应新增）" % (
+                        path, cur,
+                        {"M": "修改", "D": "删除", "R": "重命名"}[status[:1]]))
+    except (OSError, subprocess.SubprocessError):
+        raw_note = ["跳过：git 查询失败"]
+    rec("raw 不可变", SOFT, raw_bad,
+        (["基准: git 历史（只应出现 A）"] + raw_bad) if raw_bad else raw_note)
+
+    # 16. 结构计数（信息；排除 .git）
     files_all = []
     for d, subdirs, fs in os.walk(root):
         subdirs[:] = [x for x in subdirs if x != ".git"]
