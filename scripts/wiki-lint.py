@@ -166,7 +166,7 @@ def main():
     date_source = "git 提交日期" if gdates else "文件 mtime（无 git 历史，降级）"
 
     def page_day(rel):
-        key = "wiki/" + rel
+        key = "wiki/%s.md" % rel   # pages 键去掉了 .md，git 路径要带后缀
         if key in gdates:
             return datetime.date.fromisoformat(gdates[key])
         return mtime_day(pages[rel])

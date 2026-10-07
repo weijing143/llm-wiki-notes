@@ -198,6 +198,31 @@ class TestStrict(Fixture):
         self.assertIn("孤儿页", d["summary"]["soft_warnings"])
 
 
+class TestGitDateBasis(Fixture):
+    @unittest.skipUnless(shutil.which("git"), "需要 git")
+    def test_git_commit_date_beats_mtime(self):
+        """提交日期 2026-01-15（mtime 是今天）：updated 对齐提交日期则不应漂移。
+
+        回归：pages 键无 .md 后缀而 git 路径有，拼接错误会静默降级 mtime。"""
+        past = "2026-01-15"
+        self.w("wiki/entities/people/p1.md",
+               page("entity", "entity_type: person\n").replace(TODAY, past))
+        self.w("wiki/index.md",
+               (INDEX_MD + "\n[[entities/people/p1]]\n").replace(TODAY, past))
+        self.w("log.md", "# Log\n\n## [%s] lint | fixture\n" % past)
+        env = dict(os.environ, GIT_AUTHOR_DATE=past + "T10:00:00+00:00",
+                   GIT_COMMITTER_DATE=past + "T10:00:00+00:00")
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "add", "-A"], cwd=self.root, check=True)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-qm", "c"], cwd=self.root, check=True, env=env)
+        code, d = self.lint()
+        self.assertEqual(d["date_source"], "git 提交日期")
+        self.assertEqual(d["checks"]["updated 漂移"]["violations"], [])
+        self.assertEqual(code, 0, json.dumps(d["summary"], ensure_ascii=False))
+
+
 class TestWikiNew(Fixture):
     def test_scaffold_entity_then_lint_no_hard_failures(self):
         out = self.new("entity", "p1", "--entity-type", "person")
