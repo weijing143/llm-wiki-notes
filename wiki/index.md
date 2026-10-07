@@ -7,7 +7,7 @@ updated: 2026-10-07
 
 # LLM Wiki Index
 
-全部 wiki 页面的目录（当前 0 页）。入库触发方式与定级规则见库根 `WIKI.md`。
+全部 wiki 页面的目录（当前 6 页）。入库触发方式与定级规则见库根 `WIKI.md`。
 
 > 本文件由 `scripts/wiki-index.py` 生成，请勿手改；入库后重新生成，CI 以 `--check` 校验。
 
@@ -17,7 +17,7 @@ updated: 2026-10-07
 
 ## Collections
 
-（暂无）
+- [[collections/zhipu-aws-bedrock-2026|智谱×AWS：GLM-5.3接入Bedrock与调用量分成]]（updated: 2026-10-07）
 
 ## Entities
 
@@ -27,7 +27,8 @@ updated: 2026-10-07
 
 ### Organizations
 
-（暂无）
+- [[entities/organizations/aws|亚马逊云科技（AWS）]]（updated: 2026-10-07）
+- [[entities/organizations/zhipu|智谱（Zhipu）]]（updated: 2026-10-07）
 
 ### Products
 
@@ -65,13 +66,19 @@ updated: 2026-10-07
 
 ## Sources
 
+### Articles
+
+- [[sources/articles/ai-daily-540|AI日报第540期（2026-10-06）]]（updated: 2026-10-07）
+- [[sources/articles/cnstock-bedrock-glm53|AWS Bedrock接入GLM-5.3并按调用量分成（上证报）]]（updated: 2026-10-07）
+- [[sources/articles/thepaper-bedrock-glm53|又一中国AI模型接入海外云厂商（澎湃·科创板日报）]]（updated: 2026-10-07）
+
 ## 其他（analyses / comparisons / questions）
 
 （暂无）
 
 ## 未启用分类
 
-`entities/people`、`entities/organizations`、`entities/products`、`entities/technologies`、`entities/events`、`concepts/theories`、`concepts/methods`、`concepts/frameworks`、`concepts/metrics`、`concepts/principles`、`analyses`、`comparisons`、`questions`、`collections`（暂无页面，按需创建）
+`entities/people`、`entities/products`、`entities/technologies`、`entities/events`、`concepts/theories`、`concepts/methods`、`concepts/frameworks`、`concepts/metrics`、`concepts/principles`、`analyses`、`comparisons`、`questions`（暂无页面，按需创建）
 
 ---
 *由 scripts/wiki-index.py 生成于 2026-10-07；入库后重跑本脚本更新*
