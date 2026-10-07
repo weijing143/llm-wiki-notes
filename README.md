@@ -4,7 +4,7 @@
 
 核心不是收藏链接，而是**把「自媒体主张」与「一手来源」逐条对齐**：每条主张都带来源等级和吻合度，口径被放大的地方显式标出来。
 
-当前为空模板：只含规则（`WIKI.md`）、目录骨架、页面模板（`templates/`）、脚手架与自检脚本（`scripts/`）与留痕机制（`log.md`），尚未入库任何内容。
+框架含规则（`WIKI.md`）、目录骨架、页面模板（`templates/`）、脚手架与自检脚本（`scripts/`）与留痕机制（`log.md`），已入库首个真实专题（智谱×AWS：GLM-5.3 接入 Bedrock，2026-10-07）；清空 `wiki/`、`raw/` 内容页即可复用为空模板。
 
 ## 工作流
 
@@ -28,7 +28,7 @@ AGENTS.md                      # agent 操作入口：先读 WIKI.md + 三条核
 WIKI.md                        # 库规范：定级约定 / 入库规则 / lint 规则（schema 单源）
 LICENSE                        # wiki/ 内容 CC BY 4.0（scripts/ 代码为 MIT，见 scripts/LICENSE）
 CHANGELOG.md                   # 内容变更史
-log.md                         # 操作留痕：只保留格式与机制
+log.md                         # 操作留痕（入库 / 核查 / 规则演进）
 scripts/wiki-lint.py           # 结构自检：15 项检查，退出码分级，--strict / --json / --stale-days
 scripts/wiki-new.py            # 建页脚手架：按 schema 落目录、自动填 frontmatter
 scripts/wiki-index.py          # index.md 生成器：扫描 frontmatter 重建目录（--check 供 CI）
@@ -85,3 +85,17 @@ python3 -m unittest discover -s tests   # 脚本自身的回归自测
 ## 许可
 
 `wiki/` 知识页内容采用 [CC BY 4.0](LICENSE)；`scripts/` 与 `tests/` 代码采用 [MIT](scripts/LICENSE)。第三方内容版权归原作者。
+
+## 测试用例（`tests/test_wiki.py`，共 24 例）
+
+策略：在临时目录构造迷你 wiki fixture，子进程跑脚本、解析 `--json` 输出断言，不碰真实内容。运行 `python3 -m unittest discover -s tests`，CI 每次 push 也会执行。
+
+| 测试类 | 用例数 | 覆盖点 |
+|---|:---:|---|
+| `TestGoodFixture` | 5 | 最小 wiki 全绿（退出码 0）；schema 单源（WIKI.md 自定义 type `note` 被接受）；带链实体页通过；引号包裹的 `evidence_level: "A"` 合法；`[[页#锚点]]` / `[[页.md]]` 不算断链 |
+| `TestHardFailures` | 7 | 断链 → 退出码 1；缺 `type` → 1；缺 `evidence_level` → 1；C 级页无 ⚠️ 警示 → 1；`entity_type` 与目录不符 → 1；半角 `级(出处:…)` 报错 → 1；库根不存在 → 2 |
+| `TestStrict` | 1 | 孤儿页默认软告警（退出码 0），`--strict` 下判死（退出码 1） |
+| `TestGitDateBasis` | 1 | git 提交日期优先于 mtime（回归：pages 键缺 `.md` 后缀曾致静默降级，由 CI 首次暴露） |
+| `TestIndexGenerator` | 2 | 生成 → `--check` 通过 → 改页未重建 → `--check` 报错；空 wiki 也能生成 |
+| `TestSemiAutoChecks` | 4 | `updated` 超阈值进过时清单；>30 天含时效词进清单；标题被提及 ≥2 次未加链；「引号词」≥3 次无页 → 建页候选 |
+| `TestWikiNew` | 4 | 脚手架建实体页后 lint 零硬告警；拒绝覆盖已有页（退出码 2）；非法 `entity_type` 拒绝；concept 按目录映射落位 |
