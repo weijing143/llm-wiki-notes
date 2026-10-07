@@ -13,7 +13,8 @@
   4. updated 与最后变更日期漂移（软；取 git 提交日期，无 git 时降级 mtime 并标注）
   5. index.md 重复的 H2 区块 / 重复条目（软）
   6. log.md 漏记   最新内容页日期 > 最新日志日期（软，需人工判读）
-  7. 定级完整性    source/collection 必填 evidence_level；含 🟢🟡🔴 的表须自带图例（硬）
+  7. 定级完整性    source/collection 必填 evidence_level；含 🟢🟡🔴 的表格块须自带
+                   图例（表前 6 行内或表内；硬）——正文引用标记不算表
   8. type 完整性   每页必填 type，且值在允许集合内（硬）
   9. 子类型一致性  entity 必填 entity_type、concept 必填 concept_type 且与父目录一致；
                    source 必填 source_type（硬）
@@ -74,6 +75,36 @@ def collect_pages(wiki_dir):
 
 def mtime_day(path):
     return datetime.date.fromtimestamp(os.path.getmtime(path))
+
+
+def tables_without_legend(text):
+    """返回“含 🟢🟡🔴 但缺图例”的表格块起始行号（1 基）。
+
+    只按表格块（连续的 | 行）判定，图例须出现在表前 6 行内或表内：
+    正文里正常引用 🟢🟡🔴（如“本条判定 🟡”）不再被误判为缺图例的表，
+    真缺图例时给出精确行号。"""
+    lines = text.splitlines()
+    starts, inside = [], False
+    for i, ln in enumerate(lines):
+        if ln.startswith("|"):
+            if not inside:
+                starts.append(i)
+            inside = True
+        else:
+            inside = False
+    bad = []
+    for s0 in starts:
+        end = s0
+        while end < len(lines) and lines[end].startswith("|"):
+            end += 1
+        block = lines[s0:end]
+        if not EMOJI_RE.search("\n".join(block)):
+            continue
+        legend = (any("图例" in x for x in lines[max(0, s0 - 6):s0])
+                  or any("图例" in x for x in block))
+        if not legend:
+            bad.append(s0 + 1)
+    return bad
 
 
 def git_dates(root):
@@ -234,9 +265,9 @@ def main():
             ev = fm_value(fm, "evidence_level")
             if ev not in ("A", "B", "C", "D", "N/A"):
                 grade_missing.append("%s (%s, evidence_level=%r)" % (rel, ty, ev))
-        txt = read(path)
-        if EMOJI_RE.search(txt) and "图例" not in txt:
-            legend_missing.append(rel)
+        for ln in tables_without_legend(read(path)):
+            legend_missing.append(
+                "%s: L%d 起的核查表缺图例（表前 6 行内或表内需含“图例”）" % (rel, ln))
     grade_msgs = (["缺 evidence_level（source/collection 必填）:"]
                   + ["  " + x for x in grade_missing] if grade_missing else []) \
         + (["含 🟢🟡🔴 但缺图例的表:"]
